@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRM พงษ์สกุล ฮาร์ดแวร์</title>
+<style>
+/* ทิศทาง: แดง-ขาว สะอาด ตัวอักษรเข้มคมชัด การ์ดขาวขอบมนบนพื้นเทาอ่อน เงานุ่ม
+   เลย์เอาต์: แถบเมนูแดงด้านบน / ไซด์บาร์ป้ายกำกับด้านซ้าย / รายการหลักพร้อมแท็บสถานะ */
+:root {
+  --bg: #f4f4f6; --surface: #ffffff; --ink: #1d1b1f; --muted: #5e5e66; --line: #e6e6ea; --line-strong: #cfcfd6;
+  --red: #d6232a; --red-deep: #a8151b; --red-text: #bf1a21; --red-soft: #fdecec; --on-red: #ffffff; --head: #d6232a;
+  --good: #17804f; --warn: #965800; --bad: #b3121a; --charcoal: #2b2b31;
+  --s-lead: #8b8b94; --s-contacted: #3b82d6; --s-quoted: #d99a00; --s-negotiating: #8b5cf6; --s-won: #1f9d63; --s-lost: #2b2b31;
+  --shadow: 0 1px 2px rgba(30, 10, 10, .06), 0 6px 18px rgba(30, 10, 10, .05);
+  --font: 'IBM Plex Sans Thai', system-ui, 'Segoe UI', Tahoma, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141214; --surface: #1f1b1d; --ink: #f3eff0; --muted: #b3aaae; --line: #33292c; --line-strong: #4a3c40;
+    --red: #d93a40; --red-deep: #ff8a8f; --red-text: #ff8a8f; --red-soft: #3a1b1e; --on-red: #ffffff; --head: #8f1a20;
+    --good: #4cc38a; --warn: #e3a54a; --bad: #ff8a8f; --charcoal: #d9d4d6;
+    --s-lead: #9a9aa3; --s-contacted: #62a3ee; --s-quoted: #e8b53a; --s-negotiating: #ab8cf7; --s-won: #43c088; --s-lost: #d9d4d6;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141214; --surface: #1f1b1d; --ink: #f3eff0; --muted: #b3aaae; --line: #33292c; --line-strong: #4a3c40;
+  --red: #d93a40; --red-deep: #ff8a8f; --red-text: #ff8a8f; --red-soft: #3a1b1e; --on-red: #ffffff; --head: #8f1a20;
+  --good: #4cc38a; --warn: #e3a54a; --bad: #ff8a8f; --charcoal: #d9d4d6;
+  --s-lead: #9a9aa3; --s-contacted: #62a3ee; --s-quoted: #e8b53a; --s-negotiating: #ab8cf7; --s-won: #43c088; --s-lost: #d9d4d6;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.55; -webkit-text-size-adjust: 100%; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+h1 { font-size: 24px; font-weight: 700; letter-spacing: -.1px; }
+h2 { font-size: 17px; font-weight: 600; }
+a { color: var(--red-text); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.small { font-size: 14px; }
+.xs { font-size: 13px; }
+svg.ic { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* แถบบน */
+.top { background: var(--head); color: #fff; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 10px rgba(120, 10, 14, .25); }
+.top-in { max-width: 1280px; margin: 0 auto; padding: 0 16px; display: flex; flex-wrap: wrap; align-items: stretch; gap: 0 20px; }
+.brand { font-weight: 700; font-size: 18px; padding: 12px 0; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; }
+.brand small { font-weight: 400; font-size: 12px; opacity: .85; }
+.nav { display: flex; flex-wrap: wrap; align-items: stretch; margin-left: auto; }
+.nav button { background: transparent; border: 0; border-bottom: 3px solid transparent; color: rgba(255, 255, 255, .88); padding: 0 14px; min-height: 52px; cursor: pointer; font-weight: 500; font-size: 15px; }
+.nav button:hover { color: #fff; background: rgba(255, 255, 255, .1); }
+.nav button[aria-current="page"] { color: #fff; border-bottom-color: #fff; font-weight: 600; }
+.badge { display: inline-block; min-width: 20px; padding: 0 6px; margin-left: 6px; border-radius: 10px; background: #fff; color: var(--red-deep); font-size: 12px; font-weight: 700; text-align: center; }
+.top-r { display: flex; align-items: center; gap: 8px; }
+.icon-btn { background: transparent; border: 0; color: #fff; width: 38px; height: 38px; border-radius: 50%; cursor: pointer; display: grid; place-items: center; }
+.icon-btn:hover { background: rgba(255, 255, 255, .16); }
+.btn-white { background: #fff; color: var(--red-deep); border: 0; border-radius: 999px; padding: 7px 16px; font-weight: 600; cursor: pointer; font-size: 14px; }
+.btn-white:hover { background: #ffecec; }
+.demo-bar { background: var(--surface); border-bottom: 1px solid var(--line); }
+.demo-bar div { max-width: 1280px; margin: 0 auto; padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center; font-size: 13px; }
+.demo-bar .pill { background: var(--red-soft); color: var(--red-text); font-weight: 600; padding: 1px 10px; border-radius: 999px; }
+
+main { max-width: 1280px; margin: 0 auto; padding: 22px 16px 56px; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.between { justify-content: space-between; }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+.grid2 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; align-items: start; }
+.grid-detail { display: grid; grid-template-columns: 340px 1fr; gap: 16px; align-items: start; }
+.layout { display: grid; grid-template-columns: 270px 1fr; gap: 16px; align-items: start; }
+@media (max-width: 900px) { .grid2, .grid-detail, .layout { grid-template-columns: 1fr; } }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; box-shadow: var(--shadow); }
+.card h2 { margin-bottom: 8px; }
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0; }
+@media (max-width: 900px) { .tiles { grid-template-columns: repeat(2, 1fr); } }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+.tile::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--c); }
+.tile .k { font-size: 13px; color: var(--muted); }
+.tile .v { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.25; }
+.tile.hot { background: var(--red); border-color: var(--red); color: #fff; }
+.tile.hot::before { background: rgba(255, 255, 255, .5); }
+.tile.hot .k { color: rgba(255, 255, 255, .9); }
+
+/* ปุ่มและช่องกรอก */
+.btn { border: 1px solid var(--line-strong); background: var(--surface); border-radius: 10px; padding: 9px 16px; cursor: pointer; font-weight: 500; }
+.btn:hover { background: var(--red-soft); border-color: var(--red); }
+.btn-primary { background: var(--red); color: var(--on-red); border-color: var(--red); font-weight: 600; }
+.btn-primary:hover { background: var(--red-deep); border-color: var(--red-deep); color: #fff; }
+.btn-danger { color: var(--bad); border-color: var(--bad); }
+.btn-sm { padding: 5px 12px; font-size: 14px; }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--red-text); cursor: pointer; text-align: left; font-weight: 500; }
+.linkbtn:hover { text-decoration: underline; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field label { font-size: 14px; font-weight: 500; }
+input[type=text], input[type=search], input[type=tel], input[type=email], input[type=number], input[type=date], input[type=datetime-local], select, textarea {
+  width: 100%; border: 1px solid var(--line-strong); background: var(--surface); border-radius: 10px; padding: 9px 12px; min-width: 0; }
+input:focus, select:focus, textarea:focus { border-color: var(--red); outline: 2px solid color-mix(in srgb, var(--red) 25%, transparent); }
+textarea { resize: vertical; }
+.form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.form-grid .full { grid-column: 1 / -1; }
+@media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
+.req { color: var(--red-text); }
+.search { position: relative; flex: 1; min-width: 220px; }
+.search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+.search input { padding-left: 38px; border-radius: 999px; }
+
+/* ป้ายกำกับ แบบในภาพอ้างอิง: เต็ม/เส้นขอบ/อ่อน */
+.tg { display: inline-block; font-size: 12.5px; font-weight: 600; padding: 2px 12px; border-radius: 6px; border: 1.5px solid transparent; line-height: 1.5; white-space: nowrap; }
+.t0 { background: var(--red); color: #fff; }
+.t1 { background: var(--surface); color: var(--red-text); border-color: var(--red); }
+.t2 { background: var(--charcoal); color: var(--surface); }
+.t3 { background: var(--surface); color: var(--ink); border-color: var(--line-strong); }
+.t4 { background: var(--red-soft); color: var(--red-text); }
+.t5 { background: color-mix(in srgb, var(--line) 80%, var(--surface)); color: var(--ink); }
+.t6 { background: #7d1218; color: #fff; }
+.t7 { background: var(--surface); color: var(--ink); border-color: var(--charcoal); }
+.stage { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; padding: 1px 10px 1px 8px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); white-space: nowrap; }
+.stage::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+.tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 9px; border-radius: 6px; background: var(--red-soft); color: var(--red-text); }
+
+/* ไซด์บาร์ */
+.side { padding: 0; overflow: hidden; }
+.side-h { padding: 14px 18px; background: color-mix(in srgb, var(--line) 55%, var(--surface)); border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+.side-h .cnt { background: var(--red); color: #fff; border-radius: 999px; font-size: 12px; padding: 0 9px; }
+.side-s { padding: 14px 18px 6px; font-size: 13px; font-weight: 600; color: var(--muted); text-transform: none; }
+.side-list { list-style: none; margin: 0; padding: 0 10px 12px; }
+.side-list button { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; background: none; border: 0; border-radius: 10px; padding: 6px 8px; cursor: pointer; text-align: left; }
+.side-list button:hover { background: var(--red-soft); }
+.side-list button[aria-pressed="true"] { background: var(--red-soft); box-shadow: inset 3px 0 0 var(--red); }
+.side-list .n { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.side-list .plain { font-size: 14.5px; font-weight: 500; }
+@media (max-width: 900px) { .side-list { display: flex; flex-wrap: wrap; gap: 4px; } .side-list li { flex: 0 0 auto; } .side-list button { width: auto; } }
+
+/* แท็บแบบขีดเส้นใต้ */
+.tabs-u { display: flex; flex-wrap: nowrap; overflow-x: auto; border-bottom: 1px solid var(--line); padding: 0 8px; }
+.tabs-u button { background: none; border: 0; border-bottom: 3px solid transparent; padding: 12px 14px; cursor: pointer; white-space: nowrap; font-weight: 500; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+.tabs-u button:hover { color: var(--ink); }
+.tabs-u button[aria-pressed="true"] { color: var(--red-text); border-bottom-color: var(--red); font-weight: 600; }
+.tabs-u .n { min-width: 24px; height: 24px; padding: 0 6px; border-radius: 12px; border: 1.5px solid currentColor; font-size: 12px; display: inline-grid; place-items: center; font-variant-numeric: tabular-nums; }
+.tabs-u button[aria-pressed="true"] .n { background: var(--red); border-color: var(--red); color: #fff; }
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.tabs button { border: 1px solid var(--line-strong); background: var(--surface); border-radius: 999px; padding: 6px 16px; cursor: pointer; font-weight: 500; }
+.tabs button[aria-pressed="true"] { background: var(--red); border-color: var(--red); color: #fff; }
+.tabs .n { margin-left: 6px; opacity: .8; font-variant-numeric: tabular-nums; }
+
+/* รายการลูกค้า */
+.clist { list-style: none; margin: 0; padding: 0; }
+.crow { display: grid; grid-template-columns: 48px minmax(0, 1fr) 190px 84px; gap: 14px; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.crow:last-child { border-bottom: 0; }
+.crow:hover { background: var(--red-soft); }
+.av { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 18px; }
+.v0 { background: var(--red-soft); color: var(--red-text); }
+.v1 { background: var(--red); color: #fff; }
+.v2 { background: color-mix(in srgb, var(--line) 80%, var(--surface)); color: var(--ink); }
+.v3 { background: var(--charcoal); color: var(--surface); }
+.cname { font-weight: 600; }
+.cname .co { font-weight: 400; color: var(--muted); font-size: 14px; }
+.csub { color: var(--muted); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ctags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
+.cmid { font-size: 14px; }
+.cmid .ph { display: flex; gap: 6px; align-items: center; color: var(--muted); }
+.cr { text-align: right; font-size: 13px; color: var(--muted); }
+@media (max-width: 700px) { .crow { grid-template-columns: 44px minmax(0, 1fr) auto; } .cmid { display: none; } }
+
+/* ตารางทั่วไป รายการ งาน */
+.list { list-style: none; margin: 0; padding: 0; }
+.list > li { padding: 11px 0; border-bottom: 1px solid var(--line); }
+.list > li:last-child { border-bottom: 0; }
+.task { display: flex; gap: 12px; align-items: flex-start; }
+.chk { flex: none; width: 22px; height: 22px; margin-top: 2px; border-radius: 6px; border: 2px solid var(--line-strong); background: var(--surface); cursor: pointer; display: grid; place-items: center; color: #fff; font-size: 14px; line-height: 1; padding: 0; }
+.chk:hover { border-color: var(--red); }
+.chk.on { background: var(--red); border-color: var(--red); }
+.task .t { font-weight: 500; }
+.task.done .t { text-decoration: line-through; color: var(--muted); }
+.task .grow { flex: 1; min-width: 0; }
+.x { background: none; border: 0; color: var(--muted); cursor: pointer; padding: 2px 8px; border-radius: 8px; font-size: 14px; }
+.x:hover { color: var(--bad); background: var(--red-soft); }
+.late { color: var(--bad); font-weight: 700; }
+.today { color: var(--warn); font-weight: 700; }
+
+/* แท่ง */
+.bar-row { margin-bottom: 14px; }
+.bar { height: 9px; border-radius: 5px; background: color-mix(in srgb, var(--line) 70%, var(--surface)); margin-top: 5px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--c); border-radius: 5px; }
+
+/* ไทม์ไลน์ */
+.tl { list-style: none; margin: 0; padding: 0 0 0 14px; border-left: 2px solid var(--line-strong); }
+.tl li { position: relative; padding: 0 0 20px 20px; }
+.tl li::before { content: ''; position: absolute; left: -20px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--red); border: 2px solid var(--surface); box-sizing: content-box; margin-left: -1px; }
+.tl li.sale::before { background: var(--good); }
+
+/* บอร์ด pipeline */
+.board { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 12px; align-items: flex-start; }
+.col { flex: 0 0 268px; background: color-mix(in srgb, var(--line) 50%, var(--bg)); border-radius: 16px; padding: 12px; border-top: 5px solid var(--c); min-height: 120px; }
+.col.over { outline: 2px dashed var(--red); }
+.col-h { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; gap: 8px; }
+.col-h b { font-size: 15px; }
+.deal { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 10px; cursor: grab; box-shadow: var(--shadow); }
+.deal.drag { opacity: .45; }
+.deal .ttl { font-weight: 600; }
+.deal select { margin-top: 10px; padding: 5px 10px; font-size: 14px; }
+
+/* ตารางตัวอย่างข้อมูลที่ส่งออก */
+.tbl-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 12px; max-height: 460px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { position: sticky; top: 0; background: var(--red-soft); color: var(--ink); text-align: left; font-weight: 600; padding: 9px 12px; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
+td { padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+tr.sec td { font-weight: 700; background: color-mix(in srgb, var(--line) 50%, var(--surface)); }
+tr.sub td { font-weight: 600; color: var(--muted); }
+.msg { padding: 11px 14px; border-radius: 10px; font-size: 14.5px; margin-top: 12px; }
+.msg.ok { background: color-mix(in srgb, var(--good) 14%, var(--surface)); border: 1px solid var(--good); }
+.msg.err { background: var(--red-soft); border: 1px solid var(--red); }
+.btn[disabled] { opacity: .55; cursor: not-allowed; }
+.steps { margin: 8px 0 0; padding-left: 20px; color: var(--muted); font-size: 14px; }
+
+/* โมดัลและข้อความแจ้ง */
+.overlay { position: fixed; inset: 0; background: rgba(25, 8, 10, .6); display: grid; place-items: start center; padding: 24px 12px; overflow-y: auto; z-index: 20; }
+.modal { background: var(--surface); border-radius: 18px; width: 100%; max-width: 580px; padding: 22px; border: 1px solid var(--line); border-top: 6px solid var(--red); }
+.modal h2 { font-size: 20px; margin-bottom: 14px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; justify-content: flex-end; }
+#toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: var(--charcoal); color: var(--surface); padding: 10px 20px; border-radius: 999px; font-size: 14.5px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 30; max-width: 92vw; }
+#toast.show { opacity: 1; }
+.empty { color: var(--muted); padding: 26px 0; text-align: center; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* ---------- เพิ่มสำหรับดีไซน์ใหม่: บันทึกการติดต่อ + ออเดอร์ ---------- */
+.tile .s { font-size: 13px; color: var(--muted); }
+.tile.hot .s { color: rgba(255, 255, 255, .92); }
+.tile.click { cursor: pointer; }
+.tile.click:hover { border-color: var(--red); }
+.layout-log { display: grid; grid-template-columns: 410px minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 1000px) { .layout-log { grid-template-columns: 1fr; } }
+.sticky { position: sticky; top: 68px; }
+@media (max-width: 1000px) { .sticky { position: static; } }
+.sec-h { display: flex; gap: 10px; align-items: center; font-weight: 600; font-size: 16px; margin: 20px 0 10px; }
+.sec-h:first-child { margin-top: 0; }
+.stepno { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--red); color: #fff; font-weight: 700; font-size: 14px; flex: none; }
+fieldset.field { border: 0; padding: 0; margin: 0; min-width: 0; }
+fieldset.field legend { font-size: 14px; font-weight: 500; padding: 0; margin-bottom: 6px; }
+.field + .field, .field + .form-grid, .form-grid + .field { margin-top: 12px; }
+.seg-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.seg { position: relative; display: inline-block; }
+.seg input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.seg span { display: inline-block; padding: 7px 14px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--surface); font-weight: 500; font-size: 14.5px; }
+.seg:hover span { border-color: var(--red); }
+.seg input:checked + span { background: var(--red); border-color: var(--red); color: #fff; }
+.seg.ck input:checked + span { background: var(--red-soft); border-color: var(--red); color: var(--red-text); font-weight: 600; }
+.seg input:focus-visible + span { outline: 2px solid var(--red); outline-offset: 2px; }
+.chipbtn { border: 1px dashed var(--line-strong); background: var(--surface); border-radius: 999px; padding: 3px 12px; font-size: 13.5px; cursor: pointer; }
+.chipbtn:hover { border-color: var(--red); color: var(--red-text); }
+.chk-line { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; font-weight: 500; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 12px; }
+.chk-line input { width: 18px; height: 18px; margin-top: 3px; accent-color: var(--red); flex: none; }
+.chk-line:has(input:checked) { border-color: var(--red); background: var(--red-soft); }
+.hint { font-size: 13px; color: var(--muted); margin: 4px 0 0; }
+.flash { margin: 12px 0 0; font-weight: 500; }
+.up { display: grid; grid-template-columns: 128px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.up .grow { min-width: 0; }
+.up-d { display: flex; flex-direction: column; line-height: 1.3; }
+@media (max-width: 560px) { .up { grid-template-columns: 1fr auto; } .up-d { grid-column: 1 / -1; flex-direction: row; gap: 8px; align-items: baseline; } }
+.prog { display: inline-flex; gap: 3px; vertical-align: middle; margin-top: 4px; }
+.prog i { width: 18px; height: 6px; border-radius: 3px; background: var(--line-strong); }
+.prog i.on { background: var(--c); }
+.tbl-wrap.free { max-height: none; }
+table.dt td { vertical-align: middle; }
+table.dt tbody tr:hover td { background: color-mix(in srgb, var(--red-soft) 55%, var(--surface)); }
+.nowrap { white-space: nowrap; }
+.bal { font-weight: 700; color: var(--red-text); }
+.crow { grid-template-columns: 48px minmax(0, 1fr) 170px 118px; }
+@media (max-width: 700px) { .crow { grid-template-columns: 44px minmax(0, 1fr) auto; } }
+.cr.late { color: var(--bad); font-weight: 600; }
+.mini-n { font-variant-numeric: tabular-nums; font-weight: 700; }
+.kv { display: grid; grid-template-columns: 96px 1fr; gap: 6px 10px; font-size: 14.5px; margin: 14px 0 0; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; overflow-wrap: anywhere; }
+.good { color: var(--good); font-weight: 600; }
+.chart { display: flex; align-items: flex-end; gap: 3px; padding: 10px 0 0; overflow-x: auto; }
+.chart .cb { flex: 1 0 14px; display: flex; flex-direction: column; align-items: center; min-width: 14px; }
+.chart .cbar { height: 112px; width: 100%; display: flex; align-items: flex-end; border-bottom: 1px solid var(--line-strong); }
+.chart .cbar i { display: block; width: 100%; background: var(--red); border-radius: 3px 3px 0 0; }
+.chart .cb span { font-size: 11px; color: var(--muted); margin-top: 4px; white-space: nowrap; }
+.nav button { padding: 0 12px; }
+body.out .nav, body.out .top-r, body.out .demo-bar { display: none; }
+.loginbox { max-width: 400px; margin: 40px auto; }
+.loginbox .actions { margin-top: 14px; }
+.userchip { font-weight: 600; }
+</style>
+<meta name="crm-mode" content="online">
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <div class="brand">CRM พงษ์สกุล<small>บริษัท พงษ์สกุล ฮาร์ดแวร์ จำกัด</small></div>
+  <nav class="nav" id="nav" aria-label="เมนูหลัก"></nav>
+  <div class="top-r">
+    <button class="icon-btn" data-action="go-search" aria-label="ค้นหาลูกค้า"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
+    <button class="btn-white" data-view="log">+ บันทึกการติดต่อ</button>
+  </div>
+</div></header>
+<div class="demo-bar"><div>
+  <span class="pill">เดโม</span>
+  <span>ข้อมูลทั้งหมดเป็นตัวอย่าง ลองบันทึกการโทร เปิดออเดอร์ รับมัดจำ และปิดงานได้เลย</span>
+  <span class="muted">เก็บในเบราว์เซอร์นี้เท่านั้น</span>
+  <button class="linkbtn" data-action="reset-demo">รีเซ็ตเป็นข้อมูลตัวอย่าง</button>
+</div></div>
+<main id="app"></main>
+<div id="modal-root"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ---------- ค่าคงที่ ---------- */
+/* โหมดโปรแกรมบนเครื่อง: เซิร์ฟเวอร์ Flask ใส่ crm-mode=local ให้ตอนแพ็ก ข้อมูลจะเก็บใน SQLite แทน localStorage */
+const MODE = (document.querySelector('meta[name="crm-mode"]') || {}).content;
+const ONLINE = MODE === 'online';
+const LOCAL = MODE === 'local' || ONLINE; /* LOCAL = ข้อมูลอยู่ที่เซิร์ฟเวอร์ ไม่ใช่ localStorage */
+/* สถานะออเดอร์: 1 จองแล้ว -> 2 จ่ายมัดจำแล้ว (เหลือจ่ายหน้างาน) -> 3 เสร็จสิ้น */
+const OS = {
+  reserved: { k: 'reserved', label: 'จองแล้ว', tab: '1 จองแล้ว', c: 'var(--s-quoted)', n: 1 },
+  deposit: { k: 'deposit', label: 'จ่ายมัดจำแล้ว', tab: '2 จ่ายมัดจำแล้ว · เหลือจ่ายหน้างาน', c: 'var(--s-contacted)', n: 2 },
+  done: { k: 'done', label: 'เสร็จสิ้น', tab: '3 เสร็จสิ้น', c: 'var(--s-won)', n: 3 },
+  cancelled: { k: 'cancelled', label: 'ยกเลิก', tab: 'ยกเลิก', c: 'var(--s-lost)', n: 0 }
+};
+const OSLIST = ['reserved', 'deposit', 'done', 'cancelled'];
+const OPENS = ['reserved', 'deposit'];
+const CHANNELS = { call: 'โทรศัพท์', line: 'LINE/แชท', visit: 'เข้าพบ/หน้าร้าน', other: 'อื่น ๆ' };
+const TOPICS = { need: 'ต้องการสินค้า', ship: 'ขนส่ง', book: 'โอนจอง/มัดจำ', price: 'สอบถามราคา', other: 'อื่น ๆ' };
+const SOURCES = ['Facebook', 'Google', 'LINE', 'เว็บไซต์', 'หน้าร้าน/Walk-in', 'โทรเข้า', 'ลูกค้าแนะนำ', 'อื่น ๆ'];
+const PRODUCTS = ['คอนกรีตผสมเสร็จ', 'ปูนซีเมนต์', 'เหล็กเส้น', 'ทราย', 'หิน', 'อิฐมวลเบา', 'อิฐบล็อก', 'ท่อ PVC'];
+const STALE_DAYS = 14;
+const KEY = 'pongsakul-crm-demo-v3';
+const TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+const ICON = {
+  phone: '<svg class="ic" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/></svg>',
+  search: '<svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>'
+};
+
+/* ---------- ตัวช่วย ---------- */
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const addDays = n => { const d = new Date(); d.setDate(d.getDate() + n); return ymd(d); };
+const stamp = (n, h, m) => { const d = new Date(); d.setDate(d.getDate() + n); return ymd(d) + 'T' + pad(h == null ? 10 : h) + ':' + pad(m || 0); };
+const nowLocal = () => { const d = new Date(); return ymd(d) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+const fdate = s => { if (!s) return '-'; const p = s.slice(0, 10).split('-').map(Number); return p[2] + ' ' + TH[p[1] - 1] + ' ' + (p[0] + 543); };
+const ftime = s => s && s.length >= 16 ? fdate(s) + ' ' + s.slice(11, 16) + ' น.' : fdate(s);
+const baht = v => Number(v || 0).toLocaleString('th-TH', { maximumFractionDigits: 0 });
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const today = () => ymd(new Date());
+const $ = (sel, root) => (root || document).querySelector(sel);
+const dayDiff = s => Math.round((new Date(s.slice(0, 10)) - new Date(today())) / 86400000);
+const daysSince = s => -dayDiff(s);
+function relDay(s) {
+  if (!s) return '';
+  const n = dayDiff(s);
+  return n === 0 ? 'วันนี้' : n === 1 ? 'พรุ่งนี้' : n > 1 ? 'อีก ' + n + ' วัน' : n === -1 ? 'เมื่อวาน' : 'เลยมา ' + (-n) + ' วัน';
+}
+function rel(s) {
+  if (!s) return 'ยังไม่เคยติดต่อ';
+  const n = daysSince(s);
+  return n === 0 ? 'วันนี้ ' + s.slice(11, 16) : n === 1 ? 'เมื่อวาน' : n + ' วันก่อน';
+}
+function initial(name) {
+  const n = String(name || '').replace(/^คุณ\s*/, '').replace(/^[เแโใไ]/, '');
+  return (n.charAt(0) || '?').toUpperCase();
+}
+const sumBy = (a, f) => a.reduce((x, o) => x + f(o), 0);
+
+/* ---------- ข้อมูล ---------- */
+let S;
+const ui = { rp: 'month', rd: today(), view: 'dashboard', cid: null, logCid: null, flash: null, q: '', src: '', rep: '', custTab: 'all', orderTab: 'all', oq: '', lq: '', lrep: '', sheetTab: 'summary', busy: '', exportMsg: null, focusQ: false };
+let lastId = 0;
+const nid = () => { let x = Date.now() * 1000 + Math.floor(Math.random() * 1000); if (x <= lastId) x = lastId + 1; lastId = x; return x; };
+
+function seed() {
+  S = { seq: 0, me: '', products: PRODUCTS.slice(), customers: [], logs: [], orders: [] };
+  const C = (name, company, phone, source, rep, d, address) => { const c = { id: nid(), name, company, phone, email: '', address: address || '', source, rep, note: '', created: stamp(d, 9) }; S.customers.push(c); return c.id; };
+  const L = (cid, rep, d, h, m, channel, tags, summary, x) => { const l = Object.assign({ id: nid(), cid, rep, at: stamp(d, h, m), channel, tags, summary, product: '', qty: '', needDate: '', delivery: '', place: '', oid: null }, x || {}); S.logs.push(l); return l; };
+  const O = (cid, rep, lg, o) => { const r = Object.assign({ id: nid(), cid, rep, lid: lg ? lg.id : null, product: '', qty: '', amount: 0, deposit: 0, depositAt: '', depositNote: '', finalPaid: 0, delivery: 'ส่ง', place: '', useDate: '', status: 'reserved', doneAt: '', note: '', created: lg ? lg.at : nowLocal() }, o); S.orders.push(r); if (lg) lg.oid = r.id; return r; };
+
+  const c1 = C('คุณสมศักดิ์ ใจดี', 'บจก. สมศักดิ์การโยธา', '081-234-5678', 'โทรเข้า', 'สมชาย', -40, 'ซ.รามคำแหง 24 กรุงเทพฯ');
+  const c2 = C('คุณวิไล รุ่งเรือง', 'ร้านวิไลวัสดุก่อสร้าง', '089-555-1122', 'ลูกค้าแนะนำ', 'วิภา', -35, 'ต.บางพลี จ.สมุทรปราการ');
+  const c3 = C('คุณประเสริฐ แสงทอง', 'รับเหมาอิสระ', '086-777-9090', 'Facebook', 'สมชาย', -30);
+  const c4 = C('คุณนภา ศรีสุข', '', '092-345-6677', 'LINE', 'วิภา', -3, 'หมู่บ้านสุขสันต์ ซ.5');
+  const c5 = C('คุณธนากร พิทักษ์', 'บจก. ธนากรพัฒนา', '02-345-8800', 'เว็บไซต์', 'ปรีชา', -50, 'นิคมอุตสาหกรรมบางปู');
+  const c6 = C('คุณอรทัย บุญมา', 'ร้านอรทัยการช่าง', '087-111-4455', 'หน้าร้าน/Walk-in', 'ปรีชา', -20);
+  const c7 = C('คุณกิตติ วงศ์ไทย', 'หจก. กิตติเอ็นจิเนียริ่ง', '084-909-1212', 'Google', 'วิภา', -25);
+  const c8 = C('คุณมาลี สุขสันต์', '', '083-222-6868', 'โทรเข้า', 'สมชาย', -45);
+  const c9 = C('คุณสุรชัย ทองดี', 'ร้านสุรชัยรับเหมา', '085-000-3131', 'Facebook', 'ปรีชา', -60);
+
+  L(c1, 'สมชาย', -8, 15, 20, 'line', ['price'], 'ส่งใบเสนอราคาคอนกรีตผสมเสร็จทาง LINE ลูกค้าขอไปคิดก่อน');
+  const l1 = L(c1, 'สมชาย', 0, 9, 40, 'call', ['need', 'ship'], 'โทรหาลูกค้า ลูกค้าจะใช้คอนกรีตเทพื้นโรงรถ อาทิตย์หน้า ขอให้ส่งถึงหน้างาน แจ้งว่าจะโอนจองให้ภายในวันนี้', { product: 'คอนกรีตผสมเสร็จ 240 ksc', qty: '25 คิว', needDate: addDays(7), delivery: 'ส่ง', place: 'ซ.รามคำแหง 24' });
+  O(c1, 'สมชาย', l1, { product: l1.product, qty: l1.qty, amount: 68750, delivery: 'ส่ง', place: l1.place, useDate: l1.needDate, status: 'reserved' });
+
+  const l2 = L(c2, 'วิภา', -1, 14, 15, 'call', ['need', 'ship', 'book'], 'ลูกค้าโอนมัดจำแล้ว ขอให้ส่งปูนวันศุกร์ที่ร้านวัสดุก่อสร้าง ส่วนที่เหลือจ่ายตอนส่งของ', { product: 'ปูนซีเมนต์ ตราช้าง', qty: '200 ถุง', needDate: addDays(3), delivery: 'ส่ง', place: 'ร้านวิไลวัสดุ ต.บางพลี' });
+  O(c2, 'วิภา', l2, { product: l2.product, qty: l2.qty, amount: 42000, deposit: 12600, depositAt: addDays(-1), depositNote: 'โอนเข้าบัญชีบริษัท', delivery: 'ส่ง', place: l2.place, useDate: l2.needDate, status: 'deposit' });
+
+  const l3 = L(c3, 'สมชาย', -2, 11, 0, 'line', ['need', 'book'], 'สั่งเหล็กเส้นไปใช้ที่ไซต์ รับเองที่หน้าร้าน โอนมัดจำแล้ว', { product: 'เหล็กเส้น SD40 12 มม.', qty: '100 เส้น', needDate: addDays(1), delivery: 'รับเอง' });
+  O(c3, 'สมชาย', l3, { product: l3.product, qty: l3.qty, amount: 54000, deposit: 16000, depositAt: addDays(-2), depositNote: 'โอนผ่านแอปธนาคาร', delivery: 'รับเอง', useDate: l3.needDate, status: 'deposit' });
+
+  L(c4, 'วิภา', 0, 11, 20, 'call', ['price', 'need', 'ship'], 'สอบถามราคาทรายกับหิน สำหรับถมพื้นบ้าน ขอให้ส่งสัปดาห์หน้า ยังไม่ตัดสินใจจอง', { product: 'ทรายหยาบ', qty: '6 คิว', needDate: addDays(5), delivery: 'ส่ง', place: 'หมู่บ้านสุขสันต์ ซ.5' });
+
+  const l5 = L(c5, 'ปรีชา', -11, 10, 0, 'visit', ['need', 'ship', 'book'], 'เข้าพบที่ไซต์ เทพื้นโกดัง โอนมัดจำ 30% ที่เหลือจ่ายหน้างาน', { product: 'คอนกรีตผสมเสร็จ 280 ksc', qty: '40 คิว', needDate: addDays(-3), delivery: 'ส่ง', place: 'นิคมอุตสาหกรรมบางปู' });
+  O(c5, 'ปรีชา', l5, { product: l5.product, qty: l5.qty, amount: 112000, deposit: 33600, depositAt: addDays(-10), depositNote: 'โอนเข้าบัญชีบริษัท', finalPaid: 78400, delivery: 'ส่ง', place: l5.place, useDate: l5.needDate, status: 'done', doneAt: addDays(-3) });
+  L(c5, 'ปรีชา', -3, 16, 30, 'call', ['other'], 'โทรติดตามหลังส่งของ ลูกค้าพอใจ ฝากบริการครั้งหน้า');
+  const l7 = L(c5, 'ปรีชา', -1, 9, 30, 'call', ['need', 'ship'], 'ลูกค้าจะต่อเติมโกดัง ต้องการท่อ PVC เดือนหน้า จองไว้ก่อน ยังไม่โอนมัดจำ', { product: 'ท่อ PVC 4 นิ้ว', qty: '60 ท่อน', needDate: addDays(10), delivery: 'ส่ง', place: 'นิคมอุตสาหกรรมบางปู' });
+  O(c5, 'ปรีชา', l7, { product: l7.product, qty: l7.qty, amount: 18600, delivery: 'ส่ง', place: l7.place, useDate: l7.needDate, status: 'reserved' });
+
+  L(c6, 'ปรีชา', -4, 13, 10, 'visit', ['need', 'ship'], 'แวะมาที่หน้าร้าน ต้องการอิฐบล็อกอาทิตย์หน้า ขอราคารวมค่าส่ง จะโทรกลับมายืนยัน', { product: 'อิฐบล็อก', qty: '1,500 ก้อน', needDate: addDays(6), delivery: 'ส่ง' });
+  const l9 = L(c6, 'ปรีชา', -12, 10, 40, 'call', ['need', 'book'], 'จองปูนไว้ แต่ลูกค้าแจ้งยกเลิก เปลี่ยนไปใช้เจ้าอื่น', { product: 'ปูนซีเมนต์', qty: '150 ถุง', needDate: addDays(-6), delivery: 'ส่ง' });
+  O(c6, 'ปรีชา', l9, { product: l9.product, qty: l9.qty, amount: 21000, delivery: 'ส่ง', useDate: l9.needDate, status: 'cancelled', note: 'ลูกค้าเปลี่ยนไปใช้เจ้าอื่น' });
+
+  const l10 = L(c7, 'วิภา', -9, 10, 30, 'call', ['need', 'ship', 'book'], 'สั่งอิฐมวลเบาสำหรับต่อเติมบ้าน โอนมัดจำแล้ว จ่ายที่เหลือหน้างาน', { product: 'อิฐมวลเบา', qty: '3,000 ก้อน', needDate: addDays(-6), delivery: 'ส่ง', place: 'ถ.เพชรเกษม' });
+  O(c7, 'วิภา', l10, { product: l10.product, qty: l10.qty, amount: 21000, deposit: 6000, depositAt: addDays(-9), depositNote: 'โอนเข้าบัญชีบริษัท', finalPaid: 15000, delivery: 'ส่ง', place: l10.place, useDate: l10.needDate, status: 'done', doneAt: addDays(-6) });
+
+  L(c8, 'สมชาย', -20, 10, 15, 'call', ['price'], 'สอบถามราคาปูนซีเมนต์ ยังไม่ตัดสินใจ ขอเวลาปรึกษาครอบครัว');
+  L(c9, 'ปรีชา', -26, 14, 0, 'line', ['price'], 'ส่งรายการราคาเหล็กและท่อให้ทาง LINE ลูกค้าอ่านแล้วไม่ตอบ');
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) { const p = JSON.parse(raw); if (p && Array.isArray(p.customers) && Array.isArray(p.orders) && Array.isArray(p.logs)) { S = p; if (!Array.isArray(S.products)) S.products = PRODUCTS.slice(); return; } }
+  } catch (e) { /* ใช้ข้อมูลตัวอย่างแทน */ }
+  seed();
+}
+const emptyState = () => ({ seq: 0, me: '', products: PRODUCTS.slice(), customers: [], logs: [], orders: [] });
+const validState = p => !!(p && Array.isArray(p.customers) && Array.isArray(p.orders) && Array.isArray(p.logs));
+let ver = 0, dirty = false, pushing = false, pushT = null, needRefresh = false;
+let ME = null, base = null, revs = null, prodRev = 0, prodBase = '[]';
+const KINDS = ['customers', 'logs', 'orders'];
+const ROLE_TH = { admin: 'ผู้ดูแลระบบ', manager: 'หัวหน้า', sales: 'เซลล์' };
+const canManage = () => !!ME && (ME.role === 'admin' || ME.role === 'manager');
+const isAdmin = () => !!ME && ME.role === 'admin';
+class AuthError extends Error {}
+function setStat(k) {
+  const el = document.getElementById('savestat'); if (!el) return;
+  const T = { saved: 'บันทึกขึ้นระบบแล้ว', saving: 'กำลังบันทึก…', error: 'บันทึกไม่สำเร็จ กำลังลองใหม่…', conflict: 'มีคนอื่นแก้ไขพร้อมกัน โหลดข้อมูลล่าสุดแล้ว', offline: 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้' };
+  el.textContent = T[k] || ''; el.className = (k === 'saved' || k === 'saving') ? 'muted' : 'late';
+}
+/* เรียก API: แนบ X-CRM กัน CSRF; ถ้าเซสชันหมดอายุ (401) จะแสดงหน้าล็อกอินแล้วโยน AuthError */
+async function api(path, opt) {
+  opt = opt || {};
+  const init = { method: opt.method || 'GET', cache: 'no-store', credentials: 'same-origin', headers: { 'X-CRM': '1' } };
+  if (opt.body !== undefined) { init.method = opt.method || 'POST'; init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(opt.body); }
+  const r = await fetch(path, init);
+  if (r.status === 401 && !opt.noRedirect) { showLogin('เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง'); throw new AuthError('401'); }
+  return r;
+}
+function adopt(j) {
+  S = validState(j.state) ? j.state : emptyState();
+  if (!Array.isArray(S.products)) S.products = PRODUCTS.slice();
+  if (j.me) ME = j.me;
+  S.me = ME ? ME.name : ''; S.seq = 0;
+  revs = j.revs || { customers: {}, logs: {}, orders: {} };
+  KINDS.forEach(k => { revs[k] = revs[k] || {}; });
+  prodRev = j.productsRev || 0;
+  base = {}; KINDS.forEach(k => { base[k] = new Map(S[k].map(r => [r.id, JSON.stringify(r)])); });
+  prodBase = JSON.stringify(S.products);
+  ver = j.version || 0; needRefresh = false;
+}
+function save() {
+  dirty = true; setStat('saving');
+  clearTimeout(pushT); pushT = setTimeout(pushState, 250);
+}
+/* เทียบข้อมูลปัจจุบันกับที่ซิงก์ล่าสุด → ได้เฉพาะรายการที่เพิ่ม/แก้/ลบ */
+function diffOps() {
+  const ops = [];
+  KINDS.forEach(k => {
+    const seen = new Set();
+    S[k].forEach(r => {
+      seen.add(r.id);
+      const js = JSON.stringify(r), b = base[k].get(r.id);
+      if (b === undefined) ops.push({ op: 'put', kind: k, id: r.id, rev: 0, data: JSON.parse(js), js });
+      else if (b !== js) ops.push({ op: 'put', kind: k, id: r.id, rev: revs[k][r.id] || 0, data: JSON.parse(js), js });
+    });
+    base[k].forEach((b, id) => { if (!seen.has(id)) ops.push({ op: 'del', kind: k, id, rev: revs[k][id] || 0 }); });
+  });
+  const pj = JSON.stringify(S.products);
+  return { ops, prod: pj !== prodBase ? { rev: prodRev, list: S.products.slice(), js: pj } : null };
+}
+const CONFLICT_TH = { customer_deleted: 'ลูกค้ารายนี้ถูกคนอื่นลบไปแล้ว', deleted: 'รายการนี้ถูกคนอื่นลบไปแล้ว', changed: 'รายการนี้ถูกคนอื่นแก้ไขไปก่อนหน้า', exists: 'รหัสรายการซ้ำ' };
+/* เซิร์ฟเวอร์ปฏิเสธเพราะบางรายการถูกคนอื่นแก้ไปก่อน: ใช้ข้อมูลล่าสุดของเซิร์ฟเวอร์ แล้วใส่การแก้ไขที่ไม่ชนกลับเข้าไปส่งใหม่ */
+function rebase(j, d) {
+  const bad = new Map((j.conflicts || []).map(c => [c.kind + ':' + c.id, c.reason]));
+  adopt(j);
+  d.ops.forEach(o => {
+    if (bad.has(o.kind + ':' + o.id)) return;
+    const arr = S[o.kind], i = arr.findIndex(x => x.id === o.id);
+    if (o.op === 'put') { if (i >= 0) arr[i] = JSON.parse(o.js); else arr.push(JSON.parse(o.js)); }
+    else if (i >= 0) arr.splice(i, 1);
+  });
+  if (d.prod && !bad.has('products:0')) S.products = d.prod.list.slice();
+  dirty = true;
+  const reasons = Array.from(new Set(Array.from(bad.values()).map(r => CONFLICT_TH[r] || 'ถูกแก้ไขพร้อมกัน')));
+  closeModal(); render(); setStat('conflict');
+  toast((reasons.join(' / ') || 'มีคนอื่นแก้ไขพร้อมกัน') + ' — โหลดข้อมูลล่าสุดแล้ว การแก้ไขในรายการนั้นของคุณไม่ถูกบันทึก กรุณาตรวจและกรอกซ้ำ');
+}
+async function reloadState() { adopt(await (await api('api/state')).json()); render(); }
+async function pushState() {
+  if (pushing) return;
+  pushing = true; let tries = 0, retry = false;
+  try {
+    while (dirty) {
+      dirty = false;
+      const d = diffOps();
+      if (!d.ops.length && !d.prod) { setStat('saved'); break; }
+      const r = await api('api/sync', { body: { ops: d.ops.map(o => ({ op: o.op, kind: o.kind, id: o.id, rev: o.rev, data: o.data })), products: d.prod ? { rev: d.prod.rev, list: d.prod.list } : null } });
+      if (r.status === 409) {
+        if (++tries > 3) { await reloadState(); setStat('conflict'); break; }
+        rebase(await r.json(), d); continue;
+      }
+      if (r.status === 400 || r.status === 403) {
+        const j = await r.json().catch(() => ({}));
+        await reloadState(); setStat('saved'); toast((j.error || 'บันทึกไม่ได้') + ' — โหลดข้อมูลล่าสุดแล้ว'); break;
+      }
+      if (!r.ok) throw new Error('http ' + r.status);
+      const j = await r.json();
+      d.ops.forEach(o => {
+        if (o.op === 'put') { base[o.kind].set(o.id, o.js); revs[o.kind][o.id] = j.revs[o.kind][String(o.id)]; }
+        else { base[o.kind].delete(o.id); delete revs[o.kind][o.id]; }
+      });
+      if (d.prod) { prodBase = d.prod.js; prodRev = j.productsRev; }
+      if (j.version !== ver + 1) needRefresh = true;   /* มีคนอื่นบันทึกคั่นกลาง ให้รอบ poll ถัดไปดึงข้อมูลใหม่ */
+      ver = j.version;
+      if (!dirty) setStat('saved');
+    }
+  } catch (e) {
+    if (!(e instanceof AuthError)) { dirty = true; retry = true; setStat('error'); }
+  }
+  pushing = false;
+  if (retry) setTimeout(() => { if (dirty && !pushing) pushState(); }, 4000);
+}
+const cust = id => S.customers.find(c => c.id === id);
+const ord = id => S.orders.find(o => o.id === id);
+const lgx = id => S.logs.find(l => l.id === id);
+const cn = id => (cust(id) || {}).name || '(ลบแล้ว)';
+let toastT;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3000);
+}
+function repList() {
+  const s = new Set();
+  S.customers.forEach(c => c.rep && s.add(c.rep)); S.logs.forEach(l => l.rep && s.add(l.rep)); S.orders.forEach(o => o.rep && s.add(o.rep));
+  return Array.from(s).sort((a, b) => a.localeCompare(b, 'th'));
+}
+
+const prodChips = () => S.products.map(p => '<button type="button" class="chipbtn" data-put="f-prod" data-val="' + esc(p) + '">' + esc(p) + '</button>').join('');
+function refreshProdLists() {
+  const opts = S.products.map(r => '<option value="' + esc(r) + '">').join('');
+  ['prods', 'm-prods'].forEach(id => { const d = document.getElementById(id); if (d) d.innerHTML = opts; });
+  const ch = document.getElementById('prodchips'); if (ch) ch.innerHTML = prodChips();
+}
+
+/* ---------- กฎของข้อมูล ---------- */
+const paidSoFar = o => (o.status === 'reserved' || o.status === 'cancelled') ? 0 : (+o.deposit || 0) + (o.status === 'done' ? (+o.finalPaid || 0) : 0);
+const balance = o => o.status === 'cancelled' ? 0 : Math.max(0, (+o.amount || 0) - paidSoFar(o));
+function lastLog(cid) { let m = null; S.logs.forEach(l => { if (l.cid === cid && (!m || l.at > m.at)) m = l; }); return m; }
+function isStale(c) { const l = lastLog(c.id); return daysSince(l ? l.at : c.created) > STALE_DAYS; }
+const openOrdersOf = cid => S.orders.filter(o => o.cid === cid && OPENS.includes(o.status));
+const osChip = o => '<span class="stage" style="--c:' + OS[o.status].c + '">' + OS[o.status].label + '</span>';
+const prog = o => { const n = OS[o.status].n; return '<span class="prog" style="--c:' + OS[o.status].c + '" aria-hidden="true"><i class="' + (n >= 1 ? 'on' : '') + '"></i><i class="' + (n >= 2 ? 'on' : '') + '"></i><i class="' + (n >= 3 ? 'on' : '') + '"></i></span>'; };
+const srcTag = s => s ? '<span class="tg t' + (SOURCES.indexOf(s) % 8) + '">' + esc(s) + '</span>' : '';
+const tagChips = l => (l.tags || []).map(t => '<span class="tag">' + esc(TOPICS[t] || t) + '</span>').join(' ');
+function statusSub(o) {
+  if (o.status === 'reserved') return 'รอโอนมัดจำ';
+  if (o.status === 'deposit') return 'เหลือจ่ายหน้างาน ฿' + baht(balance(o));
+  if (o.status === 'done') return 'รับเงินครบ ' + fdate(o.doneAt);
+  return '';
+}
+function orderSorted(list) {
+  const rank = o => OPENS.includes(o.status) ? 0 : 1;
+  return list.slice().sort((a, b) => rank(a) - rank(b) || (rank(a) === 0 ? (a.useDate || '9999').localeCompare(b.useDate || '9999') : (b.doneAt || b.created).localeCompare(a.doneAt || a.created)));
+}
+const getRoot = () => $('#app');
+
+/* ---------- หน้า: ภาพรวม ---------- */
+function viewDashboard() {
+  const td = today(), wk = addDays(-6);
+  const by = k => S.orders.filter(o => o.status === k);
+  const res = by('reserved'), dep = by('deposit'), dn = by('done');
+  const logsToday = S.logs.filter(l => l.at.slice(0, 10) === td).length;
+  const logsWeek = S.logs.filter(l => l.at.slice(0, 10) >= wk).length;
+  const fresh = LOCAL && !S.customers.length && !S.orders.length && !S.logs.length;
+  const intro = fresh ? '<section class="card" style="margin-top:14px"><h2>เริ่มต้นใช้งาน</h2><p class="muted" style="margin:0 0 12px">ยังไม่มีข้อมูล เริ่มได้เลยโดยตรวจรายการสินค้า แล้วบันทึกการติดต่อลูกค้าครั้งแรก</p><div class="row"><button class="btn btn-primary" data-view="log">+ บันทึกการติดต่อครั้งแรก</button><button class="btn" data-action="manage-products">จัดการรายการสินค้า</button>' + (ONLINE ? '' : '<button class="btn" data-action="load-sample">ใส่ข้อมูลตัวอย่างเพื่อลองใช้</button>') + '</div></section>'
+    : (LOCAL && S.sample ? '<div class="msg err" style="margin-top:14px">ตอนนี้เป็นข้อมูลตัวอย่าง เมื่อพร้อมใช้งานจริงให้ไปที่หน้า “ส่งออกข้อมูล” แล้วกด “ล้างข้อมูลตัวอย่าง”</div>' : '');
+  const tile = (k, v, s, c, tab, hot) => '<div class="tile' + (hot ? ' hot' : '') + (tab ? ' click' : '') + '" style="--c:' + c + '"' + (tab ? ' data-action="open-orders" data-tab="' + tab + '" role="button" tabindex="0"' : '') + '><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + s + '</div></div>';
+
+  const up = [];
+  S.orders.forEach(o => { if (OPENS.includes(o.status)) up.push({ d: o.useDate || '', o }); });
+  S.logs.forEach(l => { if (l.needDate && !l.oid && l.needDate >= td) up.push({ d: l.needDate, l }); });
+  up.sort((a, b) => (a.d || '9999').localeCompare(b.d || '9999'));
+  const upRow = x => {
+    const late = x.d && x.d < td;
+    const dcol = '<div class="up-d"><b class="num">' + (x.d ? fdate(x.d) : 'ยังไม่ระบุวัน') + '</b>' + (x.d ? '<span class="xs ' + (late ? 'late' : dayDiff(x.d) <= 1 ? 'today' : 'muted') + '">' + relDay(x.d) + '</span>' : '') + '</div>';
+    if (x.o) {
+      const o = x.o;
+      return '<li class="up">' + dcol + '<div class="grow"><button class="linkbtn" data-action="open-customer" data-id="' + o.cid + '">' + esc(cn(o.cid)) + '</button> <span class="muted">· ' + esc(o.product) + (o.qty ? ' ' + esc(o.qty) : '') + '</span><div class="xs muted">' + esc(o.delivery || '') + (o.place ? ' · ' + esc(o.place) : '') + (o.status === 'deposit' ? ' · เหลือจ่ายหน้างาน ฿' + baht(balance(o)) : '') + '</div></div>' + osChip(o) + '</li>';
+    }
+    const l = x.l;
+    return '<li class="up">' + dcol + '<div class="grow"><button class="linkbtn" data-action="open-customer" data-id="' + l.cid + '">' + esc(cn(l.cid)) + '</button> <span class="muted">· ' + esc(l.product) + (l.qty ? ' ' + esc(l.qty) : '') + '</span><div class="xs muted">ยังไม่ได้เปิดออเดอร์ · เซลล์' + esc(l.rep) + '</div></div><button class="btn btn-sm" data-action="order-from-log" data-id="' + l.id + '">เปิดออเดอร์</button></li>';
+  };
+
+  const stale = S.customers.filter(isStale).map(c => { const l = lastLog(c.id); return { c, days: daysSince(l ? l.at : c.created), never: !l }; }).sort((a, b) => b.days - a.days);
+  const staleRow = x => '<li><div class="row between" style="gap:8px"><div style="min-width:0"><button class="linkbtn" data-action="open-customer" data-id="' + x.c.id + '">' + esc(x.c.name) + '</button><div class="xs muted">' + (x.never ? 'ยังไม่เคยบันทึกการติดต่อ' : 'ไม่ได้ติดต่อ ') + '<span class="late">' + (x.never ? '' : x.days + ' วัน') + '</span>' + (x.c.rep ? ' · เซลล์' + esc(x.c.rep) : '') + '</div></div><button class="btn btn-sm" data-action="log-for" data-id="' + x.c.id + '">' + ICON.phone + 'บันทึก</button></div></li>';
+
+  const recent = S.logs.slice().sort((a, b) => b.at.localeCompare(a.at)).slice(0, 6);
+  const reps = repList().map(r => {
+    const n7 = S.logs.filter(l => l.rep === r && l.at.slice(0, 10) >= wk).length;
+    const os = S.orders.filter(o => o.rep === r && OPENS.includes(o.status));
+    return '<tr><td>' + esc(r) + '</td><td class="r">' + n7 + '</td><td class="r">' + os.length + '</td><td class="r">' + baht(sumBy(os, o => +o.amount || 0)) + '</td></tr>';
+  }).join('');
+
+  return '<div class="row between"><div><h1>ภาพรวม</h1><p class="muted" style="margin:4px 0 0">วันนี้ ' + fdate(td) + '</p></div><button class="btn btn-primary" data-view="log">+ บันทึกการติดต่อ</button></div>' + intro +
+    '<div class="tiles">' +
+    tile('ติดต่อลูกค้าวันนี้', logsToday + ' ครั้ง', '7 วันล่าสุด ' + logsWeek + ' ครั้ง', 'var(--red)', '', true) +
+    tile('1 จองแล้ว · รอโอนมัดจำ', res.length + ' ออเดอร์', 'ยอดจอง ฿' + baht(sumBy(res, o => +o.amount || 0)), 'var(--s-quoted)', 'reserved') +
+    tile('2 จ่ายมัดจำแล้ว', dep.length + ' ออเดอร์', 'เหลือจ่ายหน้างาน ฿' + baht(sumBy(dep, balance)), 'var(--s-contacted)', 'deposit') +
+    tile('3 เสร็จสิ้น', dn.length + ' ออเดอร์', 'ยอดรวม ฿' + baht(sumBy(dn, o => +o.amount || 0)), 'var(--s-won)', 'done') +
+    '</div>' +
+    '<div class="grid2"><div class="stack">' +
+    '<section class="card"><div class="row between"><h2>สินค้าที่ลูกค้าจะใช้ / กำหนดส่ง</h2><button class="linkbtn" data-action="open-orders" data-tab="all">ดูออเดอร์ทั้งหมด</button></div>' +
+    (up.length ? '<ul class="list">' + up.slice(0, 8).map(upRow).join('') + '</ul>' : '<div class="empty">ยังไม่มีออเดอร์ที่รอส่ง</div>') + '</section>' +
+    '<section class="card"><div class="row between"><h2>บันทึกการติดต่อล่าสุด</h2><button class="linkbtn" data-view="log">ดูทั้งหมด</button></div>' +
+    (recent.length ? '<ul class="list">' + recent.map(l => '<li><div class="xs muted">' + ftime(l.at) + ' · เซลล์' + esc(l.rep) + ' · ' + CHANNELS[l.channel] + '</div><div><button class="linkbtn" data-action="open-customer" data-id="' + l.cid + '">' + esc(cn(l.cid)) + '</button> <span class="small">' + esc(l.summary.length > 110 ? l.summary.slice(0, 110) + '…' : l.summary) + '</span></div></li>').join('') + '</ul>' : '<div class="empty">ยังไม่มีบันทึก</div>') + '</section>' +
+    '</div><div class="stack">' +
+    '<section class="card"><div class="row between"><h2>ลูกค้าที่ไม่ได้ติดต่อเกิน ' + STALE_DAYS + ' วัน</h2><span class="tag">' + stale.length + '</span></div>' +
+    (stale.length ? '<ul class="list">' + stale.slice(0, 8).map(staleRow).join('') + '</ul>' : '<div class="empty">ติดต่อลูกค้าครบทุกคนแล้ว</div>') + '</section>' +
+    '<section class="card"><h2>เซลล์ — 7 วันล่าสุด</h2>' + (reps ? '<div class="tbl-wrap free"><table><thead><tr><th>เซลล์</th><th class="r">ติดต่อ (ครั้ง)</th><th class="r">ออเดอร์ที่เปิด</th><th class="r">ยอดจอง (฿)</th></tr></thead><tbody>' + reps + '</tbody></table></div>' : '<div class="empty">ยังไม่มีข้อมูล</div>') + '</section>' +
+    '</div></div>';
+}
+
+/* ---------- หน้า: บันทึกการติดต่อ ---------- */
+function logListHTML() {
+  const q = ui.lq.trim().toLowerCase();
+  const rows = S.logs.filter(l => (!ui.lrep || l.rep === ui.lrep) && (!q || (cn(l.cid) + ' ' + l.summary + ' ' + l.product + ' ' + l.rep).toLowerCase().includes(q))).sort((a, b) => b.at.localeCompare(a.at));
+  if (!rows.length) return '<div class="empty">ไม่พบรายการ</div>';
+  return '<div class="tbl-wrap free"><table class="dt"><thead><tr><th>เวลา / เซลล์</th><th>ลูกค้า</th><th>รายละเอียด</th><th>สินค้า / ต้องใช้</th><th>ออเดอร์</th><th></th></tr></thead><tbody>' +
+    rows.slice(0, 100).map(l => {
+      const o = l.oid ? ord(l.oid) : null;
+      const need = l.product ? '<div>' + esc(l.product) + (l.qty ? ' <span class="muted">' + esc(l.qty) + '</span>' : '') + '</div>' + (l.needDate ? '<div class="xs ' + (dayDiff(l.needDate) < 0 ? 'muted' : 'today') + '">ใช้ ' + fdate(l.needDate) + ' (' + relDay(l.needDate) + ')</div>' : '') + (l.delivery ? '<div class="xs muted">' + esc(l.delivery) + (l.place ? ' · ' + esc(l.place) : '') + '</div>' : '') : '<span class="muted">-</span>';
+      const ocell = o ? osChip(o) : (l.product ? '<button class="btn btn-sm" data-action="order-from-log" data-id="' + l.id + '">เปิดออเดอร์</button>' : '<span class="muted">-</span>');
+      return '<tr><td class="nowrap"><div>' + ftime(l.at) + '</div><div class="xs muted">เซลล์' + esc(l.rep) + ' · ' + CHANNELS[l.channel] + '</div></td>' +
+        '<td><button class="linkbtn" data-action="open-customer" data-id="' + l.cid + '">' + esc(cn(l.cid)) + '</button></td>' +
+        '<td style="min-width:200px"><div style="margin-bottom:4px">' + tagChips(l) + '</div>' + esc(l.summary) + '</td><td>' + need + '</td><td>' + ocell + '</td>' +
+        '<td><button class="x" data-action="delete-log" data-id="' + l.id + '" aria-label="ลบบันทึกนี้">✕</button></td></tr>';
+    }).join('') + '</tbody></table></div>' + (rows.length > 100 ? '<p class="xs muted">แสดง 100 รายการล่าสุด</p>' : '');
+}
+function viewLog() {
+  const pre = ui.logCid && cust(ui.logCid) ? ui.logCid : 0;
+  const custs = S.customers.slice().sort((a, b) => a.name.localeCompare(b.name, 'th'));
+  const reps = repList();
+  const fl = ui.flash; ui.flash = null;
+  const seg = (name, val, text, checked, type, cls) => '<label class="seg ' + (cls || '') + '"><input type="' + type + '" name="' + name + '" value="' + val + '"' + (checked ? ' checked' : '') + '><span>' + text + '</span></label>';
+  const chip = (id, days, text) => '<button type="button" class="chipbtn" data-fill="' + id + '" data-days="' + days + '">' + text + '</button>';
+  const form = '<form class="card sticky" data-form="log" autocomplete="off">' +
+    '<datalist id="reps">' + reps.map(r => '<option value="' + esc(r) + '">').join('') + '</datalist>' +
+    '<datalist id="prods">' + S.products.map(r => '<option value="' + esc(r) + '">').join('') + '</datalist>' +
+    '<div class="sec-h"><span class="stepno">1</span>ใครโทร โทรหาใคร</div>' +
+    '<div class="form-grid">' +
+    '<div class="field"><label for="f-rep">เซลล์ <span class="req">*</span></label><input type="text" id="f-rep" name="rep" list="reps" value="' + esc(S.me || '') + '" placeholder="ชื่อเซลล์" required' + (ME && ME.role === 'sales' ? ' readonly' : '') + '></div>' +
+    '<div class="field"><label for="f-cid">ลูกค้า <span class="req">*</span></label><select id="f-cid" name="cid" data-change="log-cust" required><option value="">— เลือกลูกค้า —</option><option value="new">+ ลูกค้าใหม่ (กรอกด้านล่าง)</option>' +
+    custs.map(c => '<option value="' + c.id + '"' + (c.id === pre ? ' selected' : '') + '>' + esc(c.name) + (c.company ? ' — ' + esc(c.company) : '') + '</option>').join('') + '</select></div>' +
+    '<div class="full" id="newcust" hidden><div class="form-grid">' +
+    '<div class="field"><label for="f-nname">ชื่อลูกค้าใหม่</label><input type="text" id="f-nname" name="nname" placeholder="เช่น คุณสมหมาย"></div>' +
+    '<div class="field"><label for="f-nphone">เบอร์โทร</label><input type="tel" id="f-nphone" name="nphone" placeholder="08x-xxx-xxxx"></div>' +
+    '<div class="field full"><label for="f-nsrc">แหล่งที่มา</label><select id="f-nsrc" name="nsource"><option value="">ไม่ระบุ</option>' + SOURCES.map(s => '<option>' + esc(s) + '</option>').join('') + '</select></div>' +
+    '</div></div></div>' +
+
+    '<div class="sec-h"><span class="stepno">2</span>คุยเรื่องอะไร</div>' +
+    '<fieldset class="field"><legend>ช่องทาง</legend><div class="seg-row">' + Object.keys(CHANNELS).map((k, i) => seg('channel', k, CHANNELS[k], i === 0, 'radio')).join('') + '</div></fieldset>' +
+    '<div class="field"><label for="f-at">วัน-เวลา</label><input type="datetime-local" id="f-at" name="at" value="' + nowLocal() + '"></div>' +
+    '<fieldset class="field"><legend>หัวข้อที่คุย (เลือกได้หลายข้อ)</legend><div class="seg-row">' + Object.keys(TOPICS).map(k => seg('tag', k, TOPICS[k], false, 'checkbox', 'ck')).join('') + '</div></fieldset>' +
+    '<div class="field"><label for="f-sum">รายละเอียดการคุย <span class="req">*</span></label><textarea id="f-sum" name="summary" rows="3" placeholder="เช่น ลูกค้าจะใช้คอนกรีตเทพื้นอาทิตย์หน้า ขอให้ส่งถึงหน้างาน" required></textarea></div>' +
+
+    '<div class="sec-h"><span class="stepno">3</span>สินค้า &amp; การขนส่ง</div>' +
+    '<div class="field"><div class="row between" style="gap:6px"><label for="f-prod">สินค้าที่ลูกค้าต้องการ</label><button type="button" class="linkbtn xs" data-action="manage-products">จัดการรายการสินค้า</button></div><input type="text" id="f-prod" name="product" list="prods" placeholder="เลือกจากรายการ หรือพิมพ์เอง"><div class="row" id="prodchips" style="gap:6px;margin-top:6px">' + prodChips() + '</div></div>' +
+    '<div class="field"><label for="f-qty">จำนวน</label><input type="text" id="f-qty" name="qty" placeholder="เช่น 25 คิว"></div>' +
+    '<div class="field"><label for="f-need">ลูกค้าจะใช้วันที่</label><input type="date" id="f-need" name="needDate"><div class="row" style="gap:6px;margin-top:6px">' + chip('f-need', 1, 'พรุ่งนี้') + chip('f-need', 3, '+3 วัน') + chip('f-need', 7, 'อาทิตย์หน้า') + chip('f-need', 14, '+2 สัปดาห์') + '</div></div>' +
+    '<fieldset class="field"><legend>การรับสินค้า</legend><div class="seg-row">' + seg('delivery', '', 'ยังไม่ระบุ', true, 'radio') + seg('delivery', 'ส่ง', 'ส่งถึงหน้างาน', false, 'radio') + seg('delivery', 'รับเอง', 'รับเองที่ร้าน', false, 'radio') + '</div></fieldset>' +
+    '<div class="field"><label for="f-place">สถานที่ส่ง</label><input type="text" id="f-place" name="place" placeholder="ไซต์งาน / ที่อยู่"></div>' +
+
+    '<div class="sec-h"><span class="stepno">4</span>โอนจอง / เปิดออเดอร์</div>' +
+    '<label class="chk-line"><input type="checkbox" name="mkorder" data-change="log-order"><span>เปิดออเดอร์จากการคุยครั้งนี้<br><span class="xs muted" style="font-weight:400">ต้องกรอกชื่อสินค้าในข้อ 3 ด้วย</span></span></label>' +
+    '<div id="orderbox" hidden style="margin-top:12px"><div class="form-grid">' +
+    '<div class="field"><label for="f-amt">ยอดรวม (บาท)</label><input type="number" id="f-amt" name="amount" min="0" step="any" inputmode="decimal"></div>' +
+    '<div class="field"><label for="f-dep">โอนมัดจำแล้ว (บาท)</label><input type="number" id="f-dep" name="deposit" min="0" step="any" inputmode="decimal"></div>' +
+    '<div class="field full"><label for="f-depat">วันที่โอน</label><input type="date" id="f-depat" name="depositAt" value="' + today() + '"></div></div>' +
+    '<p class="hint">เว้นช่องมัดจำว่าง = สถานะ “จองแล้ว” (รอโอน) · ใส่ยอด = “จ่ายมัดจำแล้ว เหลือจ่ายหน้างาน”</p></div>' +
+    '<div class="actions" style="justify-content:stretch"><button type="submit" class="btn btn-primary" style="flex:1">บันทึกการติดต่อ</button></div>' +
+    '</form>';
+
+  const reps2 = '<option value="">เซลล์ทุกคน</option>' + reps.map(r => '<option' + (ui.lrep === r ? ' selected' : '') + '>' + esc(r) + '</option>').join('');
+  return '<div class="row between"><div><h1>บันทึกการติดต่อ</h1><p class="muted" style="margin:4px 0 0">เซลล์โทรหาหรือคุยกับลูกค้าแล้ว จดไว้ที่นี่ ครบในหน้าเดียว</p></div></div>' +
+    (fl ? '<div class="msg ok flash" role="status">' + fl + '</div>' : '') +
+    '<div class="layout-log" style="margin-top:14px">' + form +
+    '<section class="card"><div class="row" style="margin-bottom:12px"><div class="search">' + ICON.search + '<input type="search" id="lq" placeholder="ค้นหาลูกค้า สินค้า หรือรายละเอียด" value="' + esc(ui.lq) + '" aria-label="ค้นหาบันทึก"></div>' +
+    '<select id="lrep" data-change="log-rep" style="width:auto" aria-label="กรองตามเซลล์">' + reps2 + '</select></div>' +
+    '<div id="log-list">' + logListHTML() + '</div></section></div>';
+}
+
+/* ---------- หน้า: ออเดอร์ & การขนส่ง ---------- */
+function orderActions(o) {
+  let b = '';
+  if (o.status === 'reserved') b += '<button class="btn btn-sm btn-primary" data-action="deposit-order" data-id="' + o.id + '">รับมัดจำ</button> ';
+  if (o.status === 'deposit') b += '<button class="btn btn-sm btn-primary" data-action="done-order" data-id="' + o.id + '">ปิดงาน</button> ';
+  return b + '<button class="btn btn-sm" data-action="edit-order" data-id="' + o.id + '">แก้ไข</button>';
+}
+function orderTable(list, compact) {
+  if (!list.length) return '<div class="empty">ไม่มีออเดอร์ในหมวดนี้</div>';
+  const td = today();
+  const head = ['กำหนดใช้ / ส่ง'].concat(compact ? [] : ['ลูกค้า']).concat(['สินค้า', 'การขนส่ง']).map(h => '<th>' + h + '</th>').join('') +
+    '<th class="r">ยอดรวม</th><th class="r">มัดจำ</th><th class="r">คงเหลือหน้างาน</th><th>สถานะ</th><th></th>';
+  return '<div class="tbl-wrap free"><table class="dt"><thead><tr>' + head + '</tr></thead><tbody>' +
+    list.map(o => {
+      const open = OPENS.includes(o.status), late = open && o.useDate && o.useDate < td;
+      const bal = balance(o);
+      return '<tr><td class="nowrap"><b class="num">' + fdate(o.useDate) + '</b>' + (open && o.useDate ? '<div class="xs ' + (late ? 'late' : dayDiff(o.useDate) <= 1 ? 'today' : 'muted') + '">' + relDay(o.useDate) + '</div>' : '') + '</td>' +
+        (compact ? '' : '<td><button class="linkbtn" data-action="open-customer" data-id="' + o.cid + '">' + esc(cn(o.cid)) + '</button><div class="xs muted">เซลล์' + esc(o.rep || '-') + '</div></td>') +
+        '<td>' + esc(o.product) + (o.qty ? '<div class="xs muted">' + esc(o.qty) + '</div>' : '') + '</td>' +
+        '<td>' + esc(o.delivery || '-') + (o.place ? '<div class="xs muted">' + esc(o.place) + '</div>' : '') + '</td>' +
+        '<td class="r">' + baht(o.amount) + '</td>' +
+        '<td class="r">' + (o.status === 'reserved' || o.status === 'cancelled' ? '<span class="muted">-</span>' : baht(o.deposit) + '<div class="xs muted">' + fdate(o.depositAt) + '</div>') + '</td>' +
+        '<td class="r">' + (o.status === 'cancelled' ? '<span class="muted">-</span>' : o.status === 'done' ? '<span class="muted">0</span>' : '<span class="' + (bal > 0 ? 'bal' : '') + '">' + baht(bal) + '</span>') + '</td>' +
+        '<td class="nowrap">' + osChip(o) + '<br>' + prog(o) + '<div class="xs muted">' + esc(statusSub(o)) + '</div></td>' +
+        '<td class="nowrap">' + orderActions(o) + '</td></tr>';
+    }).join('') + '</tbody></table></div>';
+}
+function orderListHTML() {
+  const q = ui.oq.trim().toLowerCase();
+  const list = orderSorted(S.orders.filter(o => (ui.orderTab === 'all' || o.status === ui.orderTab) && (!q || (cn(o.cid) + ' ' + o.product + ' ' + (o.place || '') + ' ' + (o.rep || '')).toLowerCase().includes(q))));
+  return orderTable(list, false);
+}
+function viewOrders() {
+  const open = S.orders.filter(o => OPENS.includes(o.status));
+  const cnt = k => k === 'all' ? S.orders.length : S.orders.filter(o => o.status === k).length;
+  const tile = (k, v, s, c) => '<div class="tile" style="--c:' + c + '"><div class="k">' + k + '</div><div class="v num">฿' + baht(v) + '</div><div class="s">' + s + '</div></div>';
+  return '<div class="row between"><div><h1>ออเดอร์ &amp; การขนส่ง</h1><p class="muted" style="margin:4px 0 0">ดูว่าลูกค้าแต่ละรายอยู่ขั้นไหน จองแล้ว จ่ายมัดจำแล้วเหลือจ่ายหน้างาน หรือเสร็จสิ้น</p></div><div class="row"><button class="btn" data-action="manage-products">จัดการรายการสินค้า</button><button class="btn btn-primary" data-action="new-order">+ เปิดออเดอร์</button></div></div>' +
+    '<div class="tiles">' +
+    tile('ยอดออเดอร์ที่ยังเปิดอยู่', sumBy(open, o => +o.amount || 0), open.length + ' ออเดอร์', 'var(--red)') +
+    tile('รับมัดจำแล้ว', sumBy(open, o => o.status === 'deposit' ? +o.deposit || 0 : 0), 'จากออเดอร์ขั้น 2', 'var(--s-contacted)') +
+    tile('ค้างรับหน้างาน', sumBy(open, balance), 'ยอดที่ต้องเก็บตอนส่งของ', 'var(--s-quoted)') +
+    tile('เสร็จสิ้นแล้ว', sumBy(S.orders.filter(o => o.status === 'done'), o => +o.amount || 0), cnt('done') + ' ออเดอร์', 'var(--s-won)') +
+    '</div>' +
+    '<section class="card" style="padding:0"><div class="tabs-u" role="group" aria-label="กรองตามสถานะ">' +
+    [['all', 'ทั้งหมด']].concat(OSLIST.map(k => [k, OS[k].tab])).map(t => '<button data-action="order-tab" data-tab="' + t[0] + '" aria-pressed="' + (ui.orderTab === t[0]) + '">' + t[1] + '<span class="n">' + cnt(t[0]) + '</span></button>').join('') + '</div>' +
+    '<div style="padding:14px 16px"><div class="row" style="margin-bottom:12px"><div class="search">' + ICON.search + '<input type="search" id="oq" placeholder="ค้นหาลูกค้า สินค้า หรือสถานที่ส่ง" value="' + esc(ui.oq) + '" aria-label="ค้นหาออเดอร์"></div></div>' +
+    '<div id="order-list">' + orderListHTML() + '</div></div></section>';
+}
+
+/* ---------- หน้า: ติดตามลูกค้า ---------- */
+function custBase() {
+  const q = ui.q.trim().toLowerCase();
+  return S.customers.filter(c => (!ui.src || c.source === ui.src) && (!ui.rep || c.rep === ui.rep) && (!q || (c.name + ' ' + (c.company || '') + ' ' + (c.phone || '')).toLowerCase().includes(q)));
+}
+function filteredCustomers() {
+  let a = custBase();
+  if (ui.custTab === 'open') a = a.filter(c => openOrdersOf(c.id).length);
+  if (ui.custTab === 'stale') a = a.filter(isStale);
+  const key = c => { const l = lastLog(c.id); return l ? l.at : ''; };
+  return ui.custTab === 'stale' ? a.sort((x, y) => key(x).localeCompare(key(y))) : a.sort((x, y) => key(y).localeCompare(key(x)) || x.name.localeCompare(y.name, 'th'));
+}
+function customerListHTML() {
+  const list = filteredCustomers();
+  if (!list.length) return '<div class="empty">ไม่พบลูกค้า</div>';
+  return '<ul class="clist">' + list.map(c => {
+    const l = lastLog(c.id), st = isStale(c);
+    const oo = openOrdersOf(c.id);
+    const chips = ['reserved', 'deposit'].map(k => { const n = oo.filter(o => o.status === k).length; return n ? '<span class="stage" style="--c:' + OS[k].c + '">' + OS[k].label + (n > 1 ? ' ×' + n : '') + '</span>' : ''; }).join('');
+    return '<li class="crow" role="button" tabindex="0" data-action="open-customer" data-id="' + c.id + '"><div class="av v' + (c.id % 4) + '" aria-hidden="true">' + esc(initial(c.name)) + '</div>' +
+      '<div style="min-width:0"><div class="cname">' + esc(c.name) + (c.company ? ' <span class="co">· ' + esc(c.company) + '</span>' : '') + '</div><div class="ctags">' + srcTag(c.source) + chips + '</div></div>' +
+      '<div class="cmid"><div class="ph">' + ICON.phone + esc(c.phone || '-') + '</div><div class="xs muted">เซลล์' + esc(c.rep || '-') + '</div></div>' +
+      '<div class="cr' + (st ? ' late' : '') + '">' + (l ? rel(l.at) : (st ? 'ยังไม่เคยติดต่อ' : 'เพิ่งเพิ่ม')) + '</div></li>';
+  }).join('') + '</ul>';
+}
+function viewCustomers() {
+  const base = custBase();
+  const cnt = { all: base.length, open: base.filter(c => openOrdersOf(c.id).length).length, stale: base.filter(isStale).length };
+  const reps = repList();
+  const side = (title, items, action, cur) => '<div class="side-s">' + title + '</div><ul class="side-list">' + items.map(i => '<li><button data-action="' + action + '" data-v="' + esc(i[0]) + '" aria-pressed="' + (cur === i[0]) + '"><span class="plain">' + esc(i[0]) + '</span><span class="n">' + i[1] + '</span></button></li>').join('') + '</ul>';
+  return '<div class="row between"><div><h1>ติดตามลูกค้า</h1><p class="muted" style="margin:4px 0 0">ดูว่าลูกค้าแต่ละรายติดต่อล่าสุดเมื่อไหร่ มีออเดอร์ค้างขั้นไหน และใครดูแล</p></div><button class="btn btn-primary" data-action="new-customer">+ ลูกค้าใหม่</button></div>' +
+    '<div class="layout" style="margin-top:14px"><aside class="card side" aria-label="ตัวกรอง"><div class="side-h"><span>ตัวกรอง</span>' + ((ui.src || ui.rep) ? '<button class="linkbtn xs" data-action="clear-filters">ล้าง</button>' : '') + '</div>' +
+    side('เซลล์ผู้ดูแล', reps.map(r => [r, S.customers.filter(c => c.rep === r).length]), 'set-rep', ui.rep) +
+    side('แหล่งที่มา', SOURCES.map(s => [s, S.customers.filter(c => c.source === s).length]).filter(x => x[1] || x[0] === ui.src), 'set-src', ui.src) + '</aside>' +
+    '<section class="card" style="padding:0"><div style="padding:14px 16px 4px"><div class="search">' + ICON.search + '<input type="search" id="q" placeholder="ค้นหาชื่อ บริษัท หรือเบอร์โทร" value="' + esc(ui.q) + '" aria-label="ค้นหาลูกค้า"></div></div>' +
+    '<div class="tabs-u" role="group" aria-label="กรองตามการติดตาม">' + [['all', 'ทั้งหมด'], ['open', 'มีออเดอร์ค้าง'], ['stale', 'ไม่ได้ติดต่อเกิน ' + STALE_DAYS + ' วัน']].map(t => '<button data-action="cust-tab" data-tab="' + t[0] + '" aria-pressed="' + (ui.custTab === t[0]) + '">' + t[1] + '<span class="n">' + cnt[t[0]] + '</span></button>').join('') + '</div>' +
+    '<div id="cust-list">' + customerListHTML() + '</div></section></div>';
+}
+function viewCustomer() {
+  const c = cust(ui.cid);
+  if (!c) { ui.view = 'customers'; return viewCustomers(); }
+  const logs = S.logs.filter(l => l.cid === c.id).sort((a, b) => b.at.localeCompare(a.at));
+  const orders = orderSorted(S.orders.filter(o => o.cid === c.id));
+  const l = logs[0];
+  const bought = sumBy(orders.filter(o => o.status === 'done'), o => +o.amount || 0);
+  const kv = (k, v) => '<dt>' + k + '</dt><dd>' + v + '</dd>';
+  return '<p style="margin:0 0 12px"><button class="linkbtn" data-view="customers">← กลับไปรายชื่อลูกค้า</button></p>' +
+    '<div class="grid-detail"><aside class="card"><div class="row" style="flex-wrap:nowrap"><div class="av v' + (c.id % 4) + '" aria-hidden="true">' + esc(initial(c.name)) + '</div><div style="min-width:0"><h1 style="font-size:20px">' + esc(c.name) + '</h1><div class="muted small">' + esc(c.company || '') + '</div></div></div>' +
+    '<dl class="kv">' + kv('เบอร์โทร', c.phone ? '<a href="tel:' + esc(c.phone.replace(/[^0-9+]/g, '')) + '">' + esc(c.phone) + '</a>' : '-') + kv('อีเมล', esc(c.email || '-')) + kv('ที่อยู่', esc(c.address || '-')) + kv('แหล่งที่มา', c.source ? srcTag(c.source) : '-') + kv('เซลล์ผู้ดูแล', esc(c.rep || '-')) +
+    kv('ติดต่อล่าสุด', l ? '<span class="' + (isStale(c) ? 'late' : '') + '">' + rel(l.at) + '</span>' : 'ยังไม่เคยติดต่อ') + kv('ยอดซื้อสะสม', '฿' + baht(bought)) + kv('หมายเหตุ', esc(c.note || '-')) + '</dl>' +
+    '<div class="row" style="margin-top:16px"><button class="btn btn-primary" data-action="log-for" data-id="' + c.id + '">' + ICON.phone + ' บันทึกการติดต่อ</button><button class="btn" data-action="edit-customer" data-id="' + c.id + '">แก้ไข</button><button class="btn btn-danger" data-action="delete-customer" data-id="' + c.id + '">ลบ</button></div></aside>' +
+    '<div class="stack"><section class="card"><div class="row between"><h2>ออเดอร์ &amp; การขนส่ง</h2><button class="btn btn-sm" data-action="new-order" data-cid="' + c.id + '">+ เปิดออเดอร์</button></div>' + orderTable(orders, true) + '</section>' +
+    '<section class="card"><h2>ประวัติการติดต่อ</h2>' + (logs.length ? '<ul class="tl">' + logs.map(x => '<li' + (x.oid ? ' class="sale"' : '') + '><div class="row between" style="gap:6px"><div class="xs muted">' + ftime(x.at) + ' · ' + CHANNELS[x.channel] + ' · เซลล์' + esc(x.rep) + '</div><button class="x" data-action="delete-log" data-id="' + x.id + '" aria-label="ลบบันทึกนี้">✕</button></div>' +
+      '<div style="margin:2px 0 4px">' + tagChips(x) + '</div><div>' + esc(x.summary) + '</div>' +
+      (x.product ? '<div class="xs muted" style="margin-top:4px">สินค้า: ' + esc(x.product) + (x.qty ? ' ' + esc(x.qty) : '') + (x.needDate ? ' · ใช้ ' + fdate(x.needDate) : '') + (x.delivery ? ' · ' + esc(x.delivery) : '') + '</div>' : '') + '</li>').join('') + '</ul>' : '<div class="empty">ยังไม่มีบันทึกการติดต่อ</div>') + '</section></div></div>';
+}
+
+/* ---------- หน้า: สรุปรายงาน (รายวัน / รายเดือน / รายปี) ---------- */
+const MONTHS_FULL = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+function parseD(s) { const p = s.slice(0, 10).split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+function periodRange(p, anchor) {
+  const d = parseD(anchor), y = d.getFullYear(), m = d.getMonth();
+  if (p === 'day') return { from: ymd(d), to: ymd(d), label: fdate(ymd(d)) };
+  if (p === 'month') return { from: ymd(new Date(y, m, 1)), to: ymd(new Date(y, m + 1, 0)), label: MONTHS_FULL[m] + ' ' + (y + 543) };
+  return { from: y + '-01-01', to: y + '-12-31', label: 'ปี ' + (y + 543) };
+}
+function shiftAnchor(p, anchor, n) {
+  const d = parseD(anchor);
+  if (p === 'day') d.setDate(d.getDate() + n);
+  else if (p === 'month') { d.setDate(1); d.setMonth(d.getMonth() + n); }
+  else { d.setDate(1); d.setMonth(0); d.setFullYear(d.getFullYear() + n); }
+  return ymd(d);
+}
+function metrics(from, to) {
+  const inr = s => { const x = (s || '').slice(0, 10); return !!x && x >= from && x <= to; };
+  const logs = S.logs.filter(l => inr(l.at));
+  const opened = S.orders.filter(o => inr(o.created) && o.status !== 'cancelled');
+  const depIn = S.orders.filter(o => (o.status === 'deposit' || o.status === 'done') && inr(o.depositAt));
+  const doneO = S.orders.filter(o => o.status === 'done' && inr(o.doneAt));
+  const deposit = sumBy(depIn, o => +o.deposit || 0), fin = sumBy(doneO, o => +o.finalPaid || 0);
+  return { logs, opened, depIn, doneO, deposit, fin, cash: deposit + fin, booked: sumBy(opened, o => +o.amount || 0), newC: S.customers.filter(c => inr(c.created)), due: S.orders.filter(o => o.status !== 'cancelled' && inr(o.useDate)) };
+}
+function viewReport() {
+  const p = ui.rp, R = periodRange(p, ui.rd), m = metrics(R.from, R.to);
+  const unit = { day: 'วันนี้', month: 'เดือนนี้', year: 'ปีนี้' }[p];
+  const tile = (k, v, s, c, hot) => '<div class="tile' + (hot ? ' hot' : '') + '" style="--c:' + c + '"><div class="k">' + k + '</div><div class="v num">' + v + '</div><div class="s">' + s + '</div></div>';
+  const picker = p === 'day' ? '<input type="date" id="rp-in" data-change="rp-date" value="' + R.from + '" aria-label="เลือกวัน" style="width:auto">'
+    : p === 'month' ? '<input type="month" id="rp-in" data-change="rp-date" value="' + R.from.slice(0, 7) + '" aria-label="เลือกเดือน" style="width:auto">'
+    : '<input type="number" id="rp-in" data-change="rp-date" min="2000" max="2999" value="' + R.from.slice(0, 4) + '" aria-label="เลือกปี (ค.ศ.)" style="width:110px">';
+
+  let body = '';
+  if (p === 'day') {
+    const ev = [];
+    m.opened.forEach(o => ev.push('<li><b>เปิดออเดอร์</b> ' + esc(cn(o.cid)) + ' · ' + esc(o.product) + (o.qty ? ' ' + esc(o.qty) : '') + ' <span class="muted">ยอด ฿' + baht(o.amount) + '</span></li>'));
+    m.depIn.forEach(o => ev.push('<li><b>รับมัดจำ</b> ' + esc(cn(o.cid)) + ' <span class="good">฿' + baht(o.deposit) + '</span></li>'));
+    m.doneO.forEach(o => ev.push('<li><b>ปิดงาน</b> ' + esc(cn(o.cid)) + ' · รับหน้างาน <span class="good">฿' + baht(o.finalPaid) + '</span></li>'));
+    body = '<div class="grid2"><section class="card"><h2>บันทึกการติดต่อ</h2>' + (m.logs.length ? '<ul class="list">' + m.logs.slice().sort((a, b) => a.at.localeCompare(b.at)).map(l => '<li><div class="xs muted">' + l.at.slice(11, 16) + ' น. · เซลล์' + esc(l.rep) + ' · ' + CHANNELS[l.channel] + '</div><div><button class="linkbtn" data-action="open-customer" data-id="' + l.cid + '">' + esc(cn(l.cid)) + '</button> <span class="small">' + esc(l.summary) + '</span></div></li>').join('') + '</ul>' : '<div class="empty">ไม่มีการติดต่อในวันนี้</div>') + '</section>' +
+      '<section class="card"><h2>ออเดอร์ &amp; เงินเข้า</h2>' + (ev.length ? '<ul class="list">' + ev.join('') + '</ul>' : '<div class="empty">ไม่มีความเคลื่อนไหวของออเดอร์</div>') + '</section></div>';
+  } else {
+    const y = parseD(R.from).getFullYear(), mo = parseD(R.from).getMonth();
+    const nDays = new Date(y, mo + 1, 0).getDate();
+    const buckets = p === 'month'
+      ? Array.from({ length: nDays }, (_, i) => { const d = ymd(new Date(y, mo, i + 1)); return { label: (i + 1) + ' ' + TH[mo], short: String(i + 1), from: d, to: d, go: 'day' }; })
+      : MONTHS_FULL.map((n, i) => ({ label: n, short: TH[i], from: ymd(new Date(y, i, 1)), to: ymd(new Date(y, i + 1, 0)), go: 'month' }));
+    buckets.forEach(b => { b.m = metrics(b.from, b.to); });
+    const max = Math.max.apply(null, buckets.map(b => b.m.cash).concat([0]));
+    const chart = max > 0 ? '<div class="chart" aria-hidden="true">' + buckets.map(b => '<div class="cb" title="' + esc(b.label) + ': ฿' + baht(b.m.cash) + '"><div class="cbar"><i style="height:' + Math.round(b.m.cash / max * 110) + 'px"></i></div><span>' + b.short + '</span></div>').join('') + '</div>' : '<div class="empty">ยังไม่มีเงินเข้าในช่วงนี้</div>';
+    const rows = buckets.map(b => { const x = b.m, z = !x.logs.length && !x.newC.length && !x.opened.length && !x.cash;
+      return '<tr' + (z ? ' class="muted"' : '') + '><td class="nowrap">' + (z ? esc(b.label) : '<button class="linkbtn" data-action="rp-go" data-p="' + b.go + '" data-d="' + b.from + '">' + esc(b.label) + '</button>') + '</td><td class="r">' + x.logs.length + '</td><td class="r">' + x.newC.length + '</td><td class="r">' + x.opened.length + '</td><td class="r">' + baht(x.booked) + '</td><td class="r">' + baht(x.deposit) + '</td><td class="r">' + baht(x.fin) + '</td><td class="r"><b>' + baht(x.cash) + '</b></td></tr>'; }).join('');
+    const tot = '<tr class="sec"><td>รวม</td><td class="r">' + m.logs.length + '</td><td class="r">' + m.newC.length + '</td><td class="r">' + m.opened.length + '</td><td class="r">' + baht(m.booked) + '</td><td class="r">' + baht(m.deposit) + '</td><td class="r">' + baht(m.fin) + '</td><td class="r">' + baht(m.cash) + '</td></tr>';
+    body = '<section class="card"><h2>เงินเข้า' + (p === 'month' ? 'รายวัน' : 'รายเดือน') + ' (บาท)</h2>' + chart + '</section>' +
+      '<section class="card" style="margin-top:16px"><h2>ตาราง' + (p === 'month' ? 'รายวัน' : 'รายเดือน') + '</h2><div class="tbl-wrap free"><table class="dt"><thead><tr><th>' + (p === 'month' ? 'วันที่' : 'เดือน') + '</th><th class="r">ติดต่อ (ครั้ง)</th><th class="r">ลูกค้าใหม่</th><th class="r">ออเดอร์ใหม่</th><th class="r">ยอดออเดอร์ใหม่</th><th class="r">มัดจำรับ</th><th class="r">รับหน้างาน</th><th class="r">เงินเข้ารวม</th></tr></thead><tbody>' + rows + tot + '</tbody></table></div><p class="xs muted">กดที่ชื่อ' + (p === 'month' ? 'วันที่' : 'เดือน') + 'เพื่อดูรายละเอียดของช่วงนั้น</p></section>';
+  }
+
+  const reps = repList().map(r => {
+    const lg = m.logs.filter(l => l.rep === r).length, op = m.opened.filter(o => o.rep === r);
+    const cash = sumBy(m.depIn.filter(o => o.rep === r), o => +o.deposit || 0) + sumBy(m.doneO.filter(o => o.rep === r), o => +o.finalPaid || 0);
+    return lg || op.length || cash ? '<tr><td>' + esc(r) + '</td><td class="r">' + lg + '</td><td class="r">' + op.length + '</td><td class="r">' + baht(sumBy(op, o => +o.amount || 0)) + '</td><td class="r">' + baht(cash) + '</td></tr>' : '';
+  }).join('');
+  const prods = {};
+  m.opened.forEach(o => { const k = o.product || '-'; (prods[k] = prods[k] || { n: 0, a: 0 }); prods[k].n++; prods[k].a += +o.amount || 0; });
+  const plist = Object.keys(prods).sort((a, b) => prods[b].a - prods[a].a).slice(0, 5);
+  const side = '<div class="grid2" style="margin-top:16px"><section class="card"><h2>แยกตามเซลล์</h2>' + (reps ? '<div class="tbl-wrap free"><table><thead><tr><th>เซลล์</th><th class="r">ติดต่อ</th><th class="r">ออเดอร์ใหม่</th><th class="r">ยอดออเดอร์</th><th class="r">เงินเข้า</th></tr></thead><tbody>' + reps + '</tbody></table></div>' : '<div class="empty">ไม่มีข้อมูลในช่วงนี้</div>') + '</section>' +
+    '<section class="card"><h2>สินค้าที่เปิดออเดอร์</h2>' + (plist.length ? '<ul class="list">' + plist.map(k => '<li><div class="row between"><span>' + esc(k) + '</span><span class="num"><b>฿' + baht(prods[k].a) + '</b> <span class="xs muted">' + prods[k].n + ' ออเดอร์</span></span></div></li>').join('') + '</ul>' : '<div class="empty">ไม่มีออเดอร์ใหม่ในช่วงนี้</div>') + '</section></div>';
+
+  return '<div class="row between"><div><h1>สรุปรายงาน</h1><p class="muted" style="margin:4px 0 0">ดูภาพรวมการติดต่อ ออเดอร์ และเงินเข้า แยกเป็นรายวัน รายเดือน หรือรายปี</p></div></div>' +
+    '<div class="row" style="margin:14px 0 0;gap:10px"><div class="tabs" style="margin:0" role="group" aria-label="ช่วงเวลา">' + [['day', 'รายวัน'], ['month', 'รายเดือน'], ['year', 'รายปี']].map(t => '<button data-action="rp-set" data-p="' + t[0] + '" aria-pressed="' + (p === t[0]) + '">' + t[1] + '</button>').join('') + '</div>' +
+    '<button class="btn btn-sm" data-action="rp-prev" aria-label="ช่วงก่อนหน้า">← ก่อนหน้า</button>' + picker + '<button class="btn btn-sm" data-action="rp-next" aria-label="ช่วงถัดไป">ถัดไป →</button><button class="btn btn-sm" data-action="rp-now">' + unit + '</button></div>' +
+    '<h2 style="margin:18px 0 0;font-size:20px">' + esc(R.label) + '</h2>' +
+    '<div class="tiles">' + tile('ติดต่อลูกค้า', m.logs.length + ' ครั้ง', 'ลูกค้าใหม่ ' + m.newC.length + ' ราย', 'var(--red)', true) +
+    tile('ออเดอร์ใหม่', m.opened.length + ' ออเดอร์', 'ยอดรวม ฿' + baht(m.booked), 'var(--s-quoted)') +
+    tile('เงินเข้า', '฿' + baht(m.cash), 'มัดจำ ฿' + baht(m.deposit) + ' · หน้างาน ฿' + baht(m.fin), 'var(--s-won)') +
+    tile('ปิดงานเสร็จสิ้น', m.doneO.length + ' ออเดอร์', 'กำหนดส่งในช่วงนี้ ' + m.due.length + ' ออเดอร์', 'var(--s-contacted)') + '</div>' +
+    body + side;
+}
+
+/* ---------- ส่งออกข้อมูล (Excel / Google Sheets) ---------- */
+const CAP = { downloads: null, mcp: null };
+function initCaps() {
+  try {
+    if (!(window.claude && window.claude.use)) return;
+    window.claude.use('downloads').then(d => { CAP.downloads = d; if (ui.view === 'export') render(); }).catch(() => {});
+    window.claude.use('mcp').then(m => { CAP.mcp = m; if (ui.view === 'export') render(); }).catch(() => {});
+  } catch (e) { /* ไม่มีความสามารถเสริม ใช้ส่วนที่เหลือได้ตามปกติ */ }
+}
+function buildSheets() {
+  const wk = addDays(-6);
+  const dt = v => (v || '').replace('T', ' ').slice(0, 16);
+  const done = S.orders.filter(o => o.status === 'done');
+  const open = S.orders.filter(o => OPENS.includes(o.status));
+  const bySrc = {};
+  S.customers.forEach(c => { const k = c.source || 'ไม่ระบุ'; (bySrc[k] = bySrc[k] || []).push(c.id); });
+  const summary = [
+    ['รายการ', 'ค่า'],
+    ['ส่งออกเมื่อ', dt(nowLocal())],
+    ['จำนวนลูกค้า', S.customers.length],
+    ['บันทึกการติดต่อทั้งหมด (ครั้ง)', S.logs.length],
+    ['บันทึกการติดต่อ 7 วันล่าสุด (ครั้ง)', S.logs.filter(l => l.at.slice(0, 10) >= wk).length],
+    ['ออเดอร์ทั้งหมด', S.orders.length],
+    ['ออเดอร์ที่ยังเปิดอยู่ (จองแล้ว + จ่ายมัดจำแล้ว)', open.length],
+    ['ยอดมัดจำที่รับแล้ว ของออเดอร์ที่ยังเปิดอยู่ (บาท)', sumBy(open, o => o.status === 'deposit' ? +o.deposit || 0 : 0)],
+    ['ยอดคงเหลือที่ต้องรับหน้างาน (บาท)', sumBy(open, balance)],
+    ['ยอดออเดอร์ที่เสร็จสิ้น (บาท)', sumBy(done, o => +o.amount || 0)],
+    ['ลูกค้าที่ไม่ได้ติดต่อเกิน ' + STALE_DAYS + ' วัน (ราย)', S.customers.filter(isStale).length],
+    ['■ แยกตามสถานะออเดอร์'],
+    ['สถานะ', 'จำนวนออเดอร์', 'ยอดรวม (บาท)', 'มัดจำที่รับแล้ว (บาท)', 'คงเหลือหน้างาน (บาท)']
+  ].concat(OSLIST.map(k => { const a = S.orders.filter(o => o.status === k); return [OS[k].label, a.length, sumBy(a, o => +o.amount || 0), sumBy(a, o => k === 'reserved' || k === 'cancelled' ? 0 : +o.deposit || 0), sumBy(a, balance)]; }))
+   .concat([['■ แยกตามเซลล์'], ['เซลล์', 'บันทึกการติดต่อ (ครั้ง)', 'ออเดอร์ทั้งหมด', 'ยอดออเดอร์ (บาท)']])
+   .concat(repList().map(r => { const os = S.orders.filter(o => o.rep === r && o.status !== 'cancelled'); return [r, S.logs.filter(l => l.rep === r).length, os.length, sumBy(os, o => +o.amount || 0)]; }))
+   .concat([['■ แยกตามแหล่งที่มาของลูกค้า'], ['แหล่งที่มา', 'จำนวนลูกค้า', 'ออเดอร์เสร็จสิ้น', 'ยอดเสร็จสิ้น (บาท)']])
+   .concat(Object.keys(bySrc).map(k => { const w = done.filter(o => bySrc[k].includes(o.cid)); return [k, bySrc[k].length, w.length, sumBy(w, o => +o.amount || 0)]; }));
+
+  const yr = today().slice(0, 4);
+  const monthly = [['เดือน', 'บันทึกการติดต่อ (ครั้ง)', 'ลูกค้าใหม่ (ราย)', 'ออเดอร์ใหม่', 'ยอดออเดอร์ใหม่ (บาท)', 'มัดจำที่รับ (บาท)', 'รับเงินหน้างาน (บาท)', 'เงินเข้ารวม (บาท)', 'ออเดอร์เสร็จสิ้น']]
+    .concat(MONTHS_FULL.map((n, i) => { const x = metrics(yr + '-' + pad(i + 1) + '-01', ymd(new Date(+yr, i + 1, 0))); return [n + ' ' + (+yr + 543), x.logs.length, x.newC.length, x.opened.length, x.booked, x.deposit, x.fin, x.cash, x.doneO.length]; }));
+  const orders = [['รหัส', 'กำหนดใช้/ส่ง', 'ลูกค้า', 'เบอร์โทร', 'สินค้า', 'จำนวน', 'การขนส่ง', 'สถานที่ส่ง', 'สถานะ', 'ยอดรวม (บาท)', 'มัดจำ (บาท)', 'วันที่โอนมัดจำ', 'คงเหลือหน้างาน (บาท)', 'รับเงินหน้างาน (บาท)', 'เสร็จสิ้นเมื่อ', 'เซลล์', 'หมายเหตุ']]
+    .concat(orderSorted(S.orders).map(o => [o.id, o.useDate || '', cn(o.cid), (cust(o.cid) || {}).phone || '', o.product, o.qty || '', o.delivery || '', o.place || '', OS[o.status].label, +o.amount || 0, o.status === 'reserved' || o.status === 'cancelled' ? 0 : +o.deposit || 0, o.status === 'reserved' || o.status === 'cancelled' ? '' : o.depositAt || '', balance(o), o.status === 'done' ? +o.finalPaid || 0 : 0, o.doneAt || '', o.rep || '', o.note || '']));
+  const logs = [['วันเวลา', 'เซลล์', 'ลูกค้า', 'ช่องทาง', 'หัวข้อ', 'รายละเอียด', 'สินค้าที่ต้องการ', 'จำนวน', 'ต้องการใช้วันที่', 'การรับสินค้า', 'สถานที่ส่ง', 'สถานะออเดอร์']]
+    .concat(S.logs.slice().sort((a, b) => b.at.localeCompare(a.at)).map(l => [dt(l.at), l.rep, cn(l.cid), CHANNELS[l.channel] || l.channel, (l.tags || []).map(t => TOPICS[t] || t).join(', '), l.summary, l.product || '', l.qty || '', l.needDate || '', l.delivery || '', l.place || '', l.oid && ord(l.oid) ? OS[ord(l.oid).status].label : '']));
+  const customers = [['รหัส', 'ชื่อ', 'บริษัท', 'เบอร์โทร', 'อีเมล', 'ที่อยู่', 'แหล่งที่มา', 'เซลล์ผู้ดูแล', 'ติดต่อล่าสุด', 'ออเดอร์ที่ยังเปิดอยู่', 'ยอดซื้อสะสม (บาท)', 'หมายเหตุ', 'วันที่เพิ่ม']]
+    .concat(S.customers.map(c => { const l = lastLog(c.id); return [c.id, c.name, c.company || '', c.phone || '', c.email || '', c.address || '', c.source || '', c.rep || '', l ? dt(l.at) : '', openOrdersOf(c.id).length, sumBy(S.orders.filter(o => o.cid === c.id && o.status === 'done'), o => +o.amount || 0), c.note || '', (c.created || '').slice(0, 10)]; }));
+  return [
+    { key: 'summary', name: 'สรุป', rows: summary }, { key: 'monthly', name: 'สรุปรายเดือน', rows: monthly }, { key: 'orders', name: 'ออเดอร์ & การขนส่ง', rows: orders },
+    { key: 'logs', name: 'บันทึกการติดต่อ', rows: logs }, { key: 'customers', name: 'ลูกค้า', rows: customers }
+  ];
+}
+function colWidths(rows) {
+  const n = Math.max.apply(null, rows.map(r => r.length));
+  const w = [];
+  for (let c = 0; c < n; c++) { let m = 8; rows.forEach(r => { if (r.length > 1 || c === 0) m = Math.max(m, String(r[c] == null ? '' : r[c]).length + 2); }); w.push({ wch: Math.min(48, m) }); }
+  return w;
+}
+function workbookBytes() {
+  const wb = XLSX.utils.book_new();
+  buildSheets().forEach(sh => { const ws = XLSX.utils.aoa_to_sheet(sh.rows); ws['!cols'] = colWidths(sh.rows); XLSX.utils.book_append_sheet(wb, ws, sh.name.replace(/[\\\/\?\*\[\]:]/g, '-').slice(0, 31)); });
+  return new Uint8Array(XLSX.write(wb, { bookType: 'xlsx', type: 'array' }));
+}
+function toB64(bytes) { let b = ''; for (let i = 0; i < bytes.length; i += 0x8000) b += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(b); }
+const fileBase = () => 'pongsakul-crm-' + today();
+
+async function doDownloadLocal() {
+  ui.busy = 'dl'; ui.exportMsg = null; render();
+  try {
+    const r = await api('api/xlsx', { body: { sheets: buildSheets().map(x => ({ name: x.name, rows: x.rows })) } });
+    if (!r.ok) throw new Error('http ' + r.status);
+    const blob = await r.blob();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fileBase() + '.xlsx';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    ui.exportMsg = { ok: true, text: 'ดาวน์โหลดไฟล์แล้ว (ดูในโฟลเดอร์ดาวน์โหลดของเบราว์เซอร์) เปิดต่อใน Excel หรือ Google Sheets ได้ทันที' };
+  } catch (e) { ui.exportMsg = { ok: false, text: 'สร้างไฟล์ไม่สำเร็จ ตรวจอินเทอร์เน็ตแล้วลองใหม่ (เฉพาะหัวหน้าและผู้ดูแลที่ส่งออกไฟล์ได้)' }; }
+  ui.busy = ''; render();
+}
+async function doDownload() {
+  if (LOCAL) return doDownloadLocal();
+  if (!CAP.downloads || typeof XLSX === 'undefined') return;
+  ui.busy = 'dl'; ui.exportMsg = null; render();
+  try {
+    await CAP.downloads.save({ filename: fileBase() + '.xlsx', data: new Blob([workbookBytes()]) });
+    ui.exportMsg = { ok: true, text: 'ส่งไฟล์ให้บันทึกแล้ว เปิดไฟล์ด้วย Google Sheets ได้ตามขั้นตอนด้านล่าง' };
+  } catch (e) {
+    const code = e && e.code;
+    ui.exportMsg = { ok: false, text: code === 'declined' ? 'ยกเลิกการบันทึกไฟล์' : code === 'rate_limited' ? 'มีหน้าต่างยืนยันค้างอยู่ ตอบก่อนแล้วลองใหม่' : 'บันทึกไฟล์ไม่สำเร็จ (' + (code || 'error') + ')' };
+  }
+  ui.busy = ''; render();
+}
+async function doDriveSheet() {
+  if (!CAP.mcp || typeof XLSX === 'undefined') return;
+  ui.busy = 'drive'; ui.exportMsg = null; render();
+  try {
+    const bytes = workbookBytes();
+    if (bytes.length > 700000) throw { code: 'too_big' };
+    const res = await CAP.mcp.callTool('Google Drive', 'create_file', {
+      title: 'CRM พงษ์สกุล ข้อมูล ' + today(),
+      base64Content: toB64(bytes),
+      contentMimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    let p = res && res.payload;
+    if (typeof p === 'string') { try { p = JSON.parse(p); } catch (e) { p = null; } }
+    const f = p && (p.file || p);
+    const id = f && (f.id || f.fileId);
+    let url = f && (f.webViewLink || f.viewUrl || f.url) || (id ? 'https://docs.google.com/spreadsheets/d/' + id + '/edit' : '');
+    if (!/^https:\/\//.test(url)) url = '';
+    ui.exportMsg = { ok: true, text: 'สร้าง Google Sheet ใน Google Drive ของคุณแล้ว', url };
+  } catch (e) {
+    const code = e && e.code;
+    const T = {
+      needs_reauth: 'การเชื่อมต่อ Google Drive หมดอายุ ให้เชื่อมต่อใหม่ที่ claude.ai ตั้งค่า > Connectors',
+      server_not_connected: 'ยังไม่ได้เชื่อมต่อ Google Drive ให้เพิ่มที่ claude.ai ตั้งค่า > Connectors แล้วลองใหม่',
+      selection_required: 'มี Google Drive หลายตัวเชื่อมอยู่ ให้เลือกตัวที่ใช้ก่อน แล้วลองใหม่',
+      approval_required: 'ต้องกดอนุญาตให้หน้านี้สร้างไฟล์ใน Google Drive ก่อน เปิดหน้านี้ใน claude.ai เพื่อกดอนุญาต',
+      not_in_manifest: 'คุณไม่ได้อนุญาตให้หน้านี้ใช้ Google Drive เปิดสิทธิ์ได้ในการตั้งค่าของ Artifact นี้',
+      consent_required: 'คุณไม่ได้อนุญาตให้หน้านี้ใช้ Google Drive',
+      blocked_by_policy: 'องค์กรของคุณไม่อนุญาตให้สร้างไฟล์ใน Google Drive',
+      tool_error: 'Google Drive แจ้งว่าสร้างไฟล์ไม่สำเร็จ ใช้ปุ่มดาวน์โหลดแทนได้',
+      too_big: 'ข้อมูลมากเกินกว่าจะส่งตรง ใช้ปุ่มดาวน์โหลดแทน',
+      server_unavailable: 'ไม่ได้รับคำตอบจาก Google Drive ไฟล์อาจถูกสร้างไปแล้ว ตรวจใน Drive ก่อนกดซ้ำ',
+      upstream_error: 'ไม่ได้รับคำตอบจาก Google Drive ไฟล์อาจถูกสร้างไปแล้ว ตรวจใน Drive ก่อนกดซ้ำ'
+    };
+    ui.exportMsg = { ok: false, text: T[code] || 'สร้างไฟล์ใน Google Drive ไม่สำเร็จ (' + (code || 'error') + ') ใช้ปุ่มดาวน์โหลดแทนได้' };
+  }
+  ui.busy = ''; render();
+}
+async function copySheet(key) {
+  const sh = buildSheets().find(x => x.key === key); if (!sh) return;
+  const tsv = sh.rows.map(r => r.map(v => String(v == null ? '' : v).replace(/[\t\r\n]+/g, ' ')).join('\t')).join('\n');
+  try { await navigator.clipboard.writeText(tsv); ui.exportMsg = { ok: true, text: 'คัดลอกชีต “' + sh.name + '” แล้ว เปิด Google Sheets ใหม่ คลิกช่อง A1 แล้วกดวาง (Ctrl+V)' }; }
+  catch (e) { ui.exportMsg = { ok: false, text: 'เบราว์เซอร์ไม่อนุญาตให้คัดลอก ใช้ปุ่มดาวน์โหลดแทนได้' }; }
+  render();
+}
+function previewTable(rows) {
+  const n = Math.max.apply(null, rows.map(r => r.length));
+  let prevSec = false;
+  const body = rows.slice(1, 201).map(r => {
+    if (r.length === 1) { prevSec = true; return '<tr class="sec"><td colspan="' + n + '">' + esc(r[0]) + '</td></tr>'; }
+    const cls = prevSec ? ' class="sub"' : ''; prevSec = false;
+    let tds = ''; for (let c = 0; c < n; c++) { const v = r[c]; tds += '<td' + (typeof v === 'number' ? ' class="r"' : '') + '>' + esc(typeof v === 'number' ? baht(v) : (v == null ? '' : v)) + '</td>'; }
+    return '<tr' + cls + '>' + tds + '</tr>';
+  }).join('');
+  return '<div class="tbl-wrap"><table><thead><tr>' + rows[0].map(h => '<th>' + esc(h) + '</th>').join('') + '</tr></thead><tbody>' + body + '</tbody></table></div>' +
+    (rows.length > 201 ? '<p class="xs muted">แสดง 200 แถวแรก ไฟล์ที่ส่งออกมีครบทุกแถว</p>' : '');
+}
+function viewExport() {
+  const sheets = buildSheets();
+  const cur = sheets.find(x => x.key === ui.sheetTab) || sheets[0];
+  const lib = LOCAL || typeof XLSX !== 'undefined';
+  const m = ui.exportMsg, busy = !!ui.busy;
+  const cnt = sheets.map(x => [x.name, Math.max(0, x.rows.length - 1)]);
+  return '<div class="row between"><h1>ส่งออกข้อมูล</h1></div>' +
+    '<p class="muted" style="margin:6px 0 0">สรุปข้อมูลที่บันทึกไว้ทั้งหมด ส่งออกเป็นไฟล์ Excel 1 ไฟล์ แยก 5 ชีต เปิดต่อใน Google Sheets ได้ทันที</p>' +
+    '<div class="tiles"><div class="tile" style="--c:var(--red)"><div class="k">ลูกค้า</div><div class="v">' + S.customers.length + '</div></div>' +
+    '<div class="tile" style="--c:var(--charcoal)"><div class="k">ออเดอร์</div><div class="v">' + S.orders.length + '</div></div>' +
+    '<div class="tile" style="--c:var(--warn)"><div class="k">บันทึกการติดต่อ</div><div class="v">' + S.logs.length + '</div></div>' +
+    '<div class="tile" style="--c:var(--good)"><div class="k">ค้างรับหน้างาน</div><div class="v">฿' + baht(sumBy(S.orders.filter(o => OPENS.includes(o.status)), balance)) + '</div></div></div>' +
+    '<section class="card"><h2>ดาวน์โหลดหรือสร้างไฟล์</h2><div class="row" style="margin-top:6px;gap:10px">' +
+    ((LOCAL || CAP.downloads) && lib ? '<button class="btn btn-primary" data-action="dl-xlsx"' + (busy ? ' disabled' : '') + '>' + (ui.busy === 'dl' ? 'กำลังเตรียมไฟล์…' : 'ดาวน์โหลดไฟล์ (.xlsx)') + '</button>' : '') +
+    (CAP.mcp && lib ? '<button class="btn" data-action="drive-sheet"' + (busy ? ' disabled' : '') + '>' + (ui.busy === 'drive' ? 'กำลังสร้าง…' : 'สร้าง Google Sheet ใน Drive ของฉัน') + '</button>' : '') +
+    '</div>' +
+    (!lib ? '<p class="small" style="color:var(--bad)">โหลดตัวสร้างไฟล์ Excel ไม่สำเร็จ (ต้องต่ออินเทอร์เน็ต) ใช้การคัดลอกด้านล่างแทนได้</p>' : '') +
+    (lib && !LOCAL && !CAP.downloads ? '<p class="small muted">ปุ่มดาวน์โหลดใช้ได้เมื่อเปิดหน้านี้ใน claude.ai ถ้ายังไม่เห็นปุ่ม ให้รีโหลดหน้า</p>' : '') +
+    (m ? '<div class="msg ' + (m.ok ? 'ok' : 'err') + '" role="status">' + esc(m.text) + (m.url ? ' <a href="' + esc(m.url) + '" target="_blank" rel="noopener">เปิดไฟล์</a>' : '') + '</div>' : '') +
+    '<div class="small" style="margin-top:14px"><b>เปิดไฟล์ .xlsx ใน Google Sheets</b><ol class="steps"><li>เปิด drive.google.com แล้วลากไฟล์ที่ดาวน์โหลดไปวาง</li><li>ดับเบิลคลิกไฟล์ แล้วเลือก “เปิดด้วย Google ชีต”</li><li>ถ้าต้องการแก้ไขต่อ ให้เลือก ไฟล์ > บันทึกเป็น Google ชีต</li></ol></div>' +
+    '<div class="small" style="margin-top:14px"><b>หรือคัดลอกทีละชีตไปวางใน Google Sheets</b><div class="row" style="gap:8px;margin-top:8px">' +
+    sheets.map(x => '<button class="btn btn-sm" data-action="copy-sheet" data-sheet="' + x.key + '">คัดลอก: ' + x.name + '</button>').join('') + '</div></div></section>' +
+    '<section class="card" style="margin-top:16px"><h2>ตัวอย่างข้อมูลที่จะส่งออก</h2><div class="tabs">' +
+    sheets.map((x, i) => '<button data-action="sheet-tab" data-sheet="' + x.key + '" aria-pressed="' + (cur.key === x.key) + '">' + x.name + (x.key !== 'summary' ? '<span class="n">' + cnt[i][1] + '</span>' : '') + '</button>').join('') + '</div>' +
+    previewTable(cur.rows) + '</section>' +
+    '<p class="xs muted" style="margin-top:12px">' + (LOCAL ? 'ข้อมูลเก็บในฐานข้อมูลบนเซิร์ฟเวอร์ และระบบสำรองฐานข้อมูลให้อัตโนมัติทุกวัน การส่งออกเป็นอีกทางสำหรับทำรายงานหรือเก็บไว้ที่อื่น' : 'ข้อมูลในหน้านี้เก็บในเบราว์เซอร์ของคุณเท่านั้น แนะนำให้ส่งออกเป็นประจำเพื่อสำรองข้อมูล') + '</p>' +
+    (LOCAL && S.sample ? '<section class="card" style="margin-top:16px"><h2>ข้อมูลตัวอย่าง</h2><p class="small muted" style="margin:0 0 10px">ตอนนี้ระบบมีข้อมูลตัวอย่างอยู่ เมื่อพร้อมใช้งานจริงให้ล้างทิ้ง</p><button class="btn btn-danger" data-action="clear-sample">ล้างข้อมูลตัวอย่าง</button></section>' : '');
+}
+
+/* ---------- โมดัล ---------- */
+function openModal(html) { $('#modal-root').innerHTML = '<div class="overlay" data-overlay><div class="modal" role="dialog" aria-modal="true">' + html + '</div></div>'; const f = $('#modal-root input[type=text], #modal-root input[type=number], #modal-root textarea'); if (f) f.focus(); }
+function closeModal() { $('#modal-root').innerHTML = ''; }
+const fld = (id, label, name, val, x) => {
+  x = x || {};
+  const attrs = (x.req ? ' required' : '') + (x.list ? ' list="' + x.list + '"' : '') + (x.ph ? ' placeholder="' + esc(x.ph) + '"' : '') + (x.type === 'number' ? ' min="0" step="any" inputmode="decimal"' : '');
+  return '<div class="field' + (x.full ? ' full' : '') + '"><label for="' + id + '">' + label + (x.req ? ' <span class="req">*</span>' : '') + '</label>' +
+    (x.area ? '<textarea id="' + id + '" name="' + name + '" rows="2">' + esc(val) + '</textarea>' : '<input type="' + (x.type || 'text') + '" id="' + id + '" name="' + name + '" value="' + esc(val) + '"' + attrs + '>') + '</div>';
+};
+const repOpts = () => '<datalist id="m-reps">' + repList().map(r => '<option value="' + esc(r) + '">').join('') + '</datalist>';
+
+function customerModal(id) {
+  const c = id ? cust(id) : {};
+  openModal('<h2>' + (id ? 'แก้ไขลูกค้า' : 'เพิ่มลูกค้าใหม่') + '</h2><form data-form="customer"><input type="hidden" name="id" value="' + (id || '') + '"><div class="form-grid">' +
+    fld('c-name', 'ชื่อลูกค้า', 'name', c.name || '', { req: true }) + fld('c-co', 'บริษัท / ร้าน', 'company', c.company || '') +
+    fld('c-ph', 'เบอร์โทร', 'phone', c.phone || '', { type: 'tel' }) + fld('c-em', 'อีเมล', 'email', c.email || '', { type: 'email' }) +
+    fld('c-ad', 'ที่อยู่', 'address', c.address || '', { full: true }) +
+    '<div class="field"><label for="c-src">แหล่งที่มา</label><select id="c-src" name="source"><option value="">ไม่ระบุ</option>' + SOURCES.map(s => '<option' + (c.source === s ? ' selected' : '') + '>' + esc(s) + '</option>').join('') + '</select></div>' +
+    fld('c-rep', 'เซลล์ผู้ดูแล', 'rep', c.rep || S.me || '', { list: 'm-reps' }) + repOpts() +
+    fld('c-note', 'หมายเหตุ', 'note', c.note || '', { full: true, area: true }) +
+    '</div><div class="actions"><button type="button" class="btn" data-action="close-modal">ยกเลิก</button><button type="submit" class="btn btn-primary">บันทึก</button></div></form>');
+}
+function orderModal(id, preset) {
+  const o = id ? ord(id) : (preset || {});
+  const custs = S.customers.slice().sort((a, b) => a.name.localeCompare(b.name, 'th'));
+  const st = o.status || 'reserved';
+  openModal('<h2>' + (id ? 'แก้ไขออเดอร์' : 'เปิดออเดอร์ใหม่') + '</h2><form data-form="order"><input type="hidden" name="id" value="' + (id || '') + '"><input type="hidden" name="lid" value="' + (o.lid || '') + '"><div class="form-grid">' +
+    '<div class="field full"><label for="o-cid">ลูกค้า <span class="req">*</span></label><select id="o-cid" name="cid" required><option value="">— เลือกลูกค้า —</option>' + custs.map(c => '<option value="' + c.id + '"' + (c.id === o.cid ? ' selected' : '') + '>' + esc(c.name) + (c.company ? ' — ' + esc(c.company) : '') + '</option>').join('') + '</select></div>' +
+    fld('o-prod', 'สินค้า', 'product', o.product || '', { req: true, list: 'm-prods' }) + '<datalist id="m-prods">' + S.products.map(r => '<option value="' + esc(r) + '">').join('') + '</datalist>' +
+    fld('o-qty', 'จำนวน', 'qty', o.qty || '', { ph: 'เช่น 25 คิว' }) +
+    fld('o-amt', 'ยอดรวม (บาท)', 'amount', o.amount || '', { type: 'number' }) + fld('o-dep', 'มัดจำที่โอนแล้ว (บาท)', 'deposit', o.deposit || '', { type: 'number' }) +
+    fld('o-depat', 'วันที่โอนมัดจำ', 'depositAt', o.depositAt || '', { type: 'date' }) +
+    '<div class="field"><label for="o-st">สถานะ</label><select id="o-st" name="status">' + OSLIST.map(k => '<option value="' + k + '"' + (k === st ? ' selected' : '') + '>' + OS[k].label + '</option>').join('') + '</select></div>' +
+    '<div class="field"><label for="o-del">การรับสินค้า</label><select id="o-del" name="delivery"><option' + (o.delivery === 'ส่ง' || !o.delivery ? ' selected' : '') + '>ส่ง</option><option' + (o.delivery === 'รับเอง' ? ' selected' : '') + '>รับเอง</option></select></div>' +
+    fld('o-place', 'สถานที่ส่ง', 'place', o.place || '') + fld('o-use', 'กำหนดใช้ / ส่ง', 'useDate', o.useDate || '', { type: 'date' }) +
+    fld('o-rep', 'เซลล์', 'rep', o.rep || S.me || '', { list: 'm-reps' }) + repOpts() + fld('o-note', 'หมายเหตุ', 'note', o.note || '', { full: true, area: true }) +
+    '</div><div class="actions">' + (id ? '<button type="button" class="btn btn-danger" data-action="delete-order" data-id="' + id + '" style="margin-right:auto">ลบ</button>' : '') + '<button type="button" class="btn" data-action="close-modal">ยกเลิก</button><button type="submit" class="btn btn-primary">บันทึก</button></div></form>');
+}
+function depositModal(id) {
+  const o = ord(id), sug = o.amount ? Math.round(o.amount * 0.3 / 100) * 100 : '';
+  openModal('<h2>รับมัดจำ (โอนจอง)</h2><p class="small muted" style="margin:0 0 12px">' + esc(cn(o.cid)) + ' · ' + esc(o.product) + (o.qty ? ' ' + esc(o.qty) : '') + ' · ยอดรวม ฿' + baht(o.amount) + '</p>' +
+    '<form data-form="deposit"><input type="hidden" name="id" value="' + id + '"><div class="form-grid">' +
+    fld('d-amt', 'ยอดมัดจำที่โอนเข้า (บาท)', 'amount', o.deposit || sug, { type: 'number', req: true }) + fld('d-at', 'วันที่โอน', 'at', today(), { type: 'date' }) +
+    fld('d-note', 'บัญชีที่โอนเข้า / เลขอ้างอิง', 'note', o.depositNote || '', { full: true }) +
+    '</div>' + (sug ? '<p class="hint">ค่าเริ่มต้นคิด 30% ของยอดรวม แก้ไขได้ตามที่ลูกค้าโอนจริง</p>' : '') +
+    '<p class="hint">หลังบันทึก สถานะจะเป็น “จ่ายมัดจำแล้ว เหลือจ่ายหน้างาน”</p>' +
+    '<div class="actions"><button type="button" class="btn" data-action="close-modal">ยกเลิก</button><button type="submit" class="btn btn-primary">บันทึกการรับมัดจำ</button></div></form>');
+}
+function doneModal(id) {
+  const o = ord(id), bal = balance(o);
+  openModal('<h2>ปิดงาน — รับเงินหน้างาน</h2><p class="small muted" style="margin:0 0 12px">' + esc(cn(o.cid)) + ' · ' + esc(o.product) + (o.qty ? ' ' + esc(o.qty) : '') + '<br>ยอดรวม ฿' + baht(o.amount) + ' · มัดจำแล้ว ฿' + baht(o.deposit) + ' · <b>เหลือ ฿' + baht(bal) + '</b></p>' +
+    '<form data-form="done"><input type="hidden" name="id" value="' + id + '"><div class="form-grid">' +
+    fld('n-paid', 'รับเงินหน้างานจริง (บาท)', 'paid', bal, { type: 'number' }) + fld('n-at', 'วันที่ส่งของ / รับเงิน', 'at', today(), { type: 'date' }) +
+    fld('n-note', 'หมายเหตุ', 'note', '', { full: true }) +
+    '</div><div class="actions"><button type="button" class="btn" data-action="close-modal">ยกเลิก</button><button type="submit" class="btn btn-primary">ยืนยันเสร็จสิ้น</button></div></form>');
+}
+function productsModal() {
+  if (!canManage()) { toast('เฉพาะหัวหน้าหรือผู้ดูแลเท่านั้นที่จัดการรายการสินค้าได้'); return; }
+  openModal('<h2>จัดการรายการสินค้า</h2>' +
+    '<form data-form="product" class="row" style="flex-wrap:nowrap;gap:8px"><input type="text" name="name" maxlength="80" placeholder="ชื่อสินค้าใหม่ เช่น เสาเข็มคอนกรีต" aria-label="ชื่อสินค้าใหม่" required><button type="submit" class="btn btn-primary" style="white-space:nowrap">+ เพิ่ม</button></form>' +
+    (S.products.length ? '<ul class="list" style="margin-top:12px;max-height:46vh;overflow:auto">' + S.products.map((p, i) => '<li><div class="row between" style="gap:8px"><span>' + esc(p) + '</span><button type="button" class="x" data-action="delete-product" data-i="' + i + '" aria-label="ลบ ' + esc(p) + '">ลบ</button></div></li>').join('') + '</ul>' : '<div class="empty">ยังไม่มีสินค้าในรายการ เพิ่มชื่อสินค้าด้านบนได้เลย</div>') +
+    '<p class="hint">การลบมีผลกับรายการให้เลือกเท่านั้น ออเดอร์และบันทึกที่เคยลงไว้ยังคงชื่อสินค้าเดิม</p>' +
+    '<div class="actions"><button type="button" class="btn btn-primary" data-action="close-modal">เสร็จสิ้น</button></div>');
+}
+function confirmModal(text, action, id, label) {
+  openModal('<h2>ยืนยัน</h2><p>' + esc(text) + '</p><div class="actions"><button type="button" class="btn" data-action="close-modal">ยกเลิก</button><button type="button" class="btn btn-danger" data-action="' + action + '" data-id="' + id + '">' + (label || 'ลบ') + '</button></div>');
+}
+
+/* ---------- การกระทำ ---------- */
+const M = f => el => { f(el); return false; }; /* เปิดโมดัล ไม่ต้องวาดหน้าใหม่ จะได้ไม่ล้างสิ่งที่พิมพ์ค้างไว้ */
+const ACTIONS = {
+  'new-customer': M(() => customerModal()),
+  'edit-customer': M(el => customerModal(+el.dataset.id)),
+  'delete-customer': M(el => confirmModal('ลบลูกค้ารายนี้ พร้อมบันทึกการติดต่อและออเดอร์ทั้งหมด? ย้อนกลับไม่ได้', 'do-delete-customer', el.dataset.id)),
+  'do-delete-customer': el => { const id = +el.dataset.id; S.customers = S.customers.filter(c => c.id !== id); S.logs = S.logs.filter(l => l.cid !== id); S.orders = S.orders.filter(o => o.cid !== id); save(); closeModal(); ui.view = 'customers'; toast('ลบลูกค้าแล้ว'); },
+  'open-customer': el => { ui.cid = +el.dataset.id; ui.view = 'customer'; window.scrollTo(0, 0); },
+  'log-for': el => { ui.logCid = +el.dataset.id; ui.view = 'log'; window.scrollTo(0, 0); },
+  'new-order': M(el => orderModal(null, el.dataset.cid ? { cid: +el.dataset.cid } : null)),
+  'edit-order': M(el => orderModal(+el.dataset.id)),
+  'order-from-log': M(el => { const l = lgx(+el.dataset.id); orderModal(null, { cid: l.cid, lid: l.id, product: l.product, qty: l.qty, delivery: l.delivery, place: l.place, useDate: l.needDate, rep: l.rep }); }),
+  'deposit-order': M(el => depositModal(+el.dataset.id)),
+  'done-order': M(el => doneModal(+el.dataset.id)),
+  'delete-order': M(el => confirmModal('ลบออเดอร์นี้? ถ้าแค่ไม่ทำต่อ ให้เปลี่ยนสถานะเป็น “ยกเลิก” แทนจะเก็บประวัติไว้', 'do-delete-order', el.dataset.id)),
+  'do-delete-order': el => { const id = +el.dataset.id; S.orders = S.orders.filter(o => o.id !== id); S.logs.forEach(l => { if (l.oid === id) l.oid = null; }); save(); closeModal(); toast('ลบออเดอร์แล้ว'); },
+  'delete-log': el => { const id = +el.dataset.id; S.logs = S.logs.filter(l => l.id !== id); S.orders.forEach(o => { if (o.lid === id) o.lid = null; }); save(); toast('ลบบันทึกแล้ว'); },
+  'order-tab': el => { ui.orderTab = el.dataset.tab; },
+  'open-orders': el => { ui.orderTab = el.dataset.tab || 'all'; ui.view = 'orders'; window.scrollTo(0, 0); },
+  'cust-tab': el => { ui.custTab = el.dataset.tab; },
+  'set-src': el => { ui.src = ui.src === el.dataset.v ? '' : el.dataset.v; },
+  'set-rep': el => { ui.rep = ui.rep === el.dataset.v ? '' : el.dataset.v; },
+  'clear-filters': () => { ui.src = ''; ui.rep = ''; ui.q = ''; },
+  'go-search': () => { ui.view = 'customers'; ui.focusQ = true; },
+  'dl-xlsx': () => { doDownload(); },
+  'drive-sheet': () => { doDriveSheet(); },
+  'copy-sheet': el => { copySheet(el.dataset.sheet); },
+  'sheet-tab': el => { ui.sheetTab = el.dataset.sheet; },
+  'rp-set': el => { ui.rp = el.dataset.p; },
+  'rp-prev': () => { ui.rd = shiftAnchor(ui.rp, ui.rd, -1); },
+  'rp-next': () => { ui.rd = shiftAnchor(ui.rp, ui.rd, 1); },
+  'rp-now': () => { ui.rd = today(); },
+  'rp-go': el => { ui.rp = el.dataset.p; ui.rd = el.dataset.d; window.scrollTo(0, 0); },
+  'manage-products': M(() => productsModal()),
+  'delete-product': el => { const i = +el.dataset.i, name = S.products[i]; S.products.splice(i, 1); save(); productsModal(); refreshProdLists(); toast('ลบ “' + name + '” ออกจากรายการแล้ว'); return false; },
+  'logout': () => { doLogout(); return false; },
+  'change-pw': M(() => pwModal()),
+  'new-user': M(() => userModal()),
+  'edit-user': M(el => userModal(+el.dataset.id)),
+  'close-modal': () => { closeModal(); return false; },
+  'load-sample': () => { if (!LOCAL || S.customers.length || S.orders.length || S.logs.length) return; const pr = S.products.slice(); seed(); S.products = pr; S.sample = true; save(); toast('ใส่ข้อมูลตัวอย่างแล้ว'); },
+  'clear-sample': M(() => confirmModal('ล้างข้อมูลทั้งหมดในระบบ (ลูกค้า บันทึกการติดต่อ ออเดอร์) รวมที่กรอกเพิ่มหลังใส่ข้อมูลตัวอย่าง? ย้อนกลับไม่ได้ แต่ยังมีไฟล์สำรองรายวันของโปรแกรม', 'do-clear-sample', 0, 'ล้างข้อมูล')),
+  'do-clear-sample': () => { const pr = S.products.slice(); S = emptyState(); S.products = pr; save(); closeModal(); ui.view = 'dashboard'; toast('ล้างข้อมูลแล้ว'); },
+  'reset-demo': () => { if (LOCAL) return; seed(); save(); ui.view = 'dashboard'; ui.src = ''; ui.rep = ''; ui.q = ''; ui.custTab = 'all'; ui.orderTab = 'all'; ui.lq = ''; ui.lrep = ''; closeModal(); toast('รีเซ็ตเป็นข้อมูลตัวอย่างแล้ว'); }
+};
+
+['delete-customer', 'do-delete-customer', 'delete-order', 'do-delete-order', 'delete-log', 'delete-product'].forEach(k => {
+  const f = ACTIONS[k];
+  ACTIONS[k] = el => { if (!canManage()) { toast('เฉพาะหัวหน้าหรือผู้ดูแลเท่านั้นที่ลบข้อมูลได้ ถ้าไม่ทำต่อให้เปลี่ยนสถานะเป็น “ยกเลิก” แทน'); return false; } return f(el); };
+});
+document.addEventListener('click', e => {
+  if (e.target.matches('[data-overlay]')) { closeModal(); return; }
+  const pt = e.target.closest('[data-put]');
+  if (pt) { const inp = document.getElementById(pt.dataset.put); if (inp) { inp.value = pt.dataset.val; inp.focus(); } return; }
+  const fl = e.target.closest('[data-fill]');
+  if (fl) { const inp = document.getElementById(fl.dataset.fill); if (inp) inp.value = addDays(+fl.dataset.days); return; }
+  const v = e.target.closest('[data-view]');
+  if (v) { if (v.dataset.view === 'log') ui.logCid = null; ui.view = v.dataset.view; window.scrollTo(0, 0); if (ui.view === 'users') loadUsers(); render(); return; }
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  const fn = ACTIONS[el.dataset.action];
+  if (fn && fn(el) !== false) render();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[role="button"][data-action]')) { e.preventDefault(); const fn = ACTIONS[e.target.dataset.action]; if (fn && fn(e.target) !== false) render(); }
+});
+document.addEventListener('input', e => {
+  const id = e.target.id;
+  if (id === 'q') { ui.q = e.target.value; $('#cust-list').innerHTML = customerListHTML(); }
+  else if (id === 'oq') { ui.oq = e.target.value; $('#order-list').innerHTML = orderListHTML(); }
+  else if (id === 'lq') { ui.lq = e.target.value; $('#log-list').innerHTML = logListHTML(); }
+});
+document.addEventListener('change', e => {
+  const t = e.target, ch = t.dataset && t.dataset.change;
+  if (ch === 'log-cust') { $('#newcust').hidden = t.value !== 'new'; const n = $('#f-nname'); if (n) n.required = t.value === 'new'; }
+  else if (ch === 'log-order') { $('#orderbox').hidden = !t.checked; }
+  else if (ch === 'rp-date') { const v = t.value; if (ui.rp === 'day' && v) ui.rd = v; else if (ui.rp === 'month' && v) ui.rd = v + '-01'; else if (ui.rp === 'year' && /^\d{4}$/.test(v)) ui.rd = v + '-01-01'; else return; render(); }
+  else if (ch === 'log-rep') { ui.lrep = t.value; $('#log-list').innerHTML = logListHTML(); }
+});
+
+document.addEventListener('submit', e => {
+  const form = e.target.closest('form[data-form]'); if (!form) return;
+  e.preventDefault();
+  const fd = new FormData(form);
+  const f = Object.fromEntries(fd.entries());
+  const kind = form.dataset.form;
+  const num = v => Math.max(0, parseFloat(v) || 0);
+  const t = v => (v || '').trim();
+
+  if (kind === 'login') { doLogin(f); return; }
+  if (kind === 'user') { saveUser(f); return; }
+  if (kind === 'pw') { savePw(f); return; }
+  if (kind === 'product') {
+    const name = t(f.name).replace(/\s+/g, ' ');
+    if (!name) return;
+    if (S.products.some(x => x.toLowerCase() === name.toLowerCase())) { toast('มี “' + name + '” ในรายการแล้ว'); return; }
+    S.products.push(name); save(); productsModal(); refreshProdLists(); toast('เพิ่ม “' + name + '” แล้ว');
+    return;
+  }
+  if (kind === 'customer') {
+    const data = { name: t(f.name), company: t(f.company), phone: t(f.phone), email: t(f.email), address: t(f.address), source: f.source || '', rep: t(f.rep), note: t(f.note) };
+    if (!data.name) return;
+    if (f.id) { Object.assign(cust(+f.id), data); toast('บันทึกการแก้ไขแล้ว'); }
+    else {
+      const dup = data.phone && S.customers.find(c => c.phone === data.phone);
+      const c = Object.assign({ id: nid(), created: nowLocal() }, data); S.customers.push(c);
+      ui.cid = c.id; ui.view = 'customer';
+      toast(dup ? 'เพิ่มลูกค้าแล้ว (เบอร์ตรงกับ ' + dup.name + ' ตรวจสอบว่าไม่ซ้ำ)' : 'เพิ่มลูกค้าเรียบร้อยแล้ว');
+    }
+    closeModal();
+  } else if (kind === 'log') {
+    const rep = t(f.rep), summary = t(f.summary);
+    if (!rep) { toast('กรอกชื่อเซลล์ก่อน'); return; }
+    if (!summary) { toast('กรอกรายละเอียดการคุยก่อน'); return; }
+    let cid = +f.cid, isNew = false;
+    if (f.cid === 'new') {
+      const name = t(f.nname); if (!name) { toast('กรอกชื่อลูกค้าใหม่'); return; }
+      const c = { id: nid(), name, company: '', phone: t(f.nphone), email: '', address: '', source: f.nsource || '', rep, note: '', created: nowLocal() };
+      S.customers.push(c); cid = c.id; isNew = true;
+    }
+    if (!cid || !cust(cid)) { toast('เลือกลูกค้าก่อน'); return; }
+    if (f.mkorder && !t(f.product)) { toast('ถ้าจะเปิดออเดอร์ ต้องกรอกชื่อสินค้าในข้อ 3'); if (isNew) { S.customers.pop(); } return; }
+    const log = { id: nid(), cid, rep, at: f.at || nowLocal(), channel: f.channel || 'call', tags: fd.getAll('tag'), summary, product: t(f.product), qty: t(f.qty), needDate: f.needDate || '', delivery: f.delivery || '', place: t(f.place), oid: null };
+    S.logs.push(log);
+    S.me = rep;
+    let msg = 'บันทึกการติดต่อกับ ' + cn(cid) + ' แล้ว';
+    if (f.mkorder) {
+      const dep = num(f.deposit);
+      const o = { id: nid(), cid, rep, lid: log.id, product: log.product, qty: log.qty, amount: num(f.amount), deposit: dep, depositAt: dep ? (f.depositAt || today()) : '', depositNote: '', finalPaid: 0, delivery: log.delivery || 'ส่ง', place: log.place, useDate: log.needDate, status: dep ? 'deposit' : 'reserved', doneAt: '', note: '', created: log.at };
+      S.orders.push(o); log.oid = o.id;
+      msg += ' และเปิดออเดอร์สถานะ “' + OS[o.status].label + '”';
+    }
+    ui.logCid = null;
+    ui.flash = esc(msg) + (f.mkorder ? ' <button class="linkbtn" data-action="open-orders" data-tab="all">ดูในตารางออเดอร์</button>' : '');
+  } else if (kind === 'order') {
+    const cid = +f.cid; if (!cid || !t(f.product)) return;
+    let status = f.status, dep = num(f.deposit);
+    if (status === 'reserved' && dep > 0) status = 'deposit';
+    if (status === 'deposit' && dep <= 0) { toast('สถานะ “จ่ายมัดจำแล้ว” ต้องใส่ยอดมัดจำด้วย'); return; }
+    if (status === 'reserved') dep = 0;
+    const data = { cid, product: t(f.product), qty: t(f.qty), amount: num(f.amount), deposit: dep, depositAt: dep ? (f.depositAt || today()) : '', delivery: f.delivery || 'ส่ง', place: t(f.place), useDate: f.useDate || '', rep: t(f.rep), note: t(f.note), status };
+    if (f.id) {
+      const o = ord(+f.id);
+      if (status === 'done' && o.status !== 'done') { data.finalPaid = Math.max(0, data.amount - dep); data.doneAt = today(); }
+      if (status !== 'done') { data.finalPaid = 0; data.doneAt = ''; }
+      Object.assign(o, data); toast('บันทึกออเดอร์แล้ว');
+    } else {
+      const o = Object.assign({ id: nid(), lid: f.lid ? +f.lid : null, depositNote: '', finalPaid: status === 'done' ? Math.max(0, data.amount - dep) : 0, doneAt: status === 'done' ? today() : '', created: nowLocal() }, data);
+      S.orders.push(o);
+      if (o.lid && lgx(o.lid)) lgx(o.lid).oid = o.id;
+      toast('เปิดออเดอร์เรียบร้อยแล้ว');
+    }
+    closeModal();
+  } else if (kind === 'deposit') {
+    const o = ord(+f.id), amt = num(f.amount); if (!o || amt <= 0) return;
+    Object.assign(o, { deposit: amt, depositAt: f.at || today(), depositNote: t(f.note), status: 'deposit' });
+    toast('บันทึกการรับมัดจำแล้ว เหลือจ่ายหน้างาน ฿' + baht(balance(o)));
+    closeModal();
+  } else if (kind === 'done') {
+    const o = ord(+f.id); if (!o) return;
+    Object.assign(o, { finalPaid: num(f.paid), doneAt: f.at || today(), status: 'done', note: t(f.note) ? (o.note ? o.note + ' | ' : '') + t(f.note) : o.note });
+    toast('ปิดงานเรียบร้อยแล้ว');
+    closeModal();
+  }
+  save(); render();
+});
+
+/* ---------- วาดหน้าจอ ---------- */
+function render() {
+  const views = { dashboard: viewDashboard, report: viewReport, log: viewLog, orders: viewOrders, customers: viewCustomers, customer: viewCustomer, export: canManage() ? viewExport : viewDashboard, users: isAdmin() ? viewUsers : viewDashboard };
+  getRoot().innerHTML = (views[ui.view] || viewDashboard)();
+  const cur = ui.view === 'customer' ? 'customers' : ui.view;
+  const nOpen = S.orders.filter(o => OPENS.includes(o.status)).length;
+  $('#nav').innerHTML = [['dashboard', 'ภาพรวม'], ['report', 'สรุปรายงาน'], ['log', 'บันทึกการติดต่อ'], ['orders', 'ออเดอร์ & ขนส่ง'], ['customers', 'ติดตามลูกค้า'], ['export', 'ส่งออกข้อมูล']].filter(n => n[0] !== 'export' || canManage()).concat(isAdmin() ? [['users', 'ผู้ใช้']] : []).map(n =>
+    '<button data-view="' + n[0] + '"' + (cur === n[0] ? ' aria-current="page"' : '') + '>' + n[1] + (n[0] === 'orders' && nOpen ? '<span class="badge">' + nOpen + '</span>' : '') + '</button>').join('');
+  if (ui.focusQ) { ui.focusQ = false; const q = $('#q'); if (q) q.focus(); }
+}
+
+/* ---------- ล็อกอิน / ผู้ใช้ ---------- */
+function showLogin(note, setup) {
+  ME = null; closeModal(); document.body.classList.add('out');
+  getRoot().innerHTML = '<section class="card loginbox"><h1 style="margin:0 0 4px">เข้าสู่ระบบ</h1><p class="muted" style="margin:0 0 14px">CRM บริษัท พงษ์สกุล ฮาร์ดแวร์ จำกัด</p>' +
+    (setup ? '<div class="msg err">ระบบยังไม่มีผู้ใช้ ผู้ดูแลต้องตั้งค่า CRM_ADMIN_PASSWORD บนเซิร์ฟเวอร์ก่อน (ดูคู่มือ)</div>' : '') +
+    '<form data-form="login"><div class="field"><label for="l-un">ชื่อผู้ใช้</label><input type="text" id="l-un" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>' +
+    '<div class="field"><label for="l-pw">รหัสผ่าน</label><input type="password" id="l-pw" name="password" autocomplete="current-password" required></div>' +
+    '<p id="login-err" class="late" role="alert" style="min-height:1.4em;margin:8px 0 0">' + esc(note || '') + '</p>' +
+    '<div class="actions"><button type="submit" class="btn btn-primary" style="width:100%">เข้าสู่ระบบ</button></div></form></section>';
+  const u = $('#l-un'); if (u) u.focus();
+}
+function loginMsg(t) { const el = document.getElementById('login-err'); if (el) el.textContent = t; }
+async function doLogin(f) {
+  loginMsg('กำลังตรวจสอบ…');
+  try {
+    const r = await api('api/login', { body: { username: (f.username || '').trim(), password: f.password || '' }, noRedirect: true });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { loginMsg(j.error || 'เข้าสู่ระบบไม่สำเร็จ'); return; }
+    ui.view = 'dashboard'; await bootOnline();
+  } catch (e) { loginMsg('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ลองใหม่อีกครั้ง'); }
+}
+async function doLogout() {
+  if (dirty || pushing) { toast('กำลังบันทึกข้อมูล รอสักครู่แล้วลองใหม่'); return; }
+  try { await api('api/logout', { body: {}, noRedirect: true }); } catch (e) { /* ออกจากหน้าจออยู่ดี */ }
+  USERS = null; showLogin('ออกจากระบบแล้ว');
+}
+function pwModal() {
+  openModal('<h2>เปลี่ยนรหัสผ่าน</h2><form data-form="pw"><div class="form-grid">' +
+    '<div class="field full"><label for="p-old">รหัสผ่านเดิม</label><input type="password" id="p-old" name="old" autocomplete="current-password" required></div>' +
+    '<div class="field full"><label for="p-new">รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)</label><input type="password" id="p-new" name="new" minlength="8" autocomplete="new-password" required></div>' +
+    '<div class="field full"><label for="p-new2">พิมพ์รหัสผ่านใหม่อีกครั้ง</label><input type="password" id="p-new2" name="new2" minlength="8" autocomplete="new-password" required></div>' +
+    '</div><div class="actions"><button type="button" class="btn" data-action="close-modal">ยกเลิก</button><button type="submit" class="btn btn-primary">เปลี่ยนรหัสผ่าน</button></div></form>');
+}
+async function savePw(f) {
+  if (f.new !== f.new2) { toast('รหัสผ่านใหม่สองช่องไม่ตรงกัน'); return; }
+  try {
+    const r = await api('api/password', { body: { old: f.old, new: f.new } });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(j.error || 'เปลี่ยนรหัสผ่านไม่สำเร็จ'); return; }
+    closeModal(); toast('เปลี่ยนรหัสผ่านแล้ว');
+  } catch (e) { if (!(e instanceof AuthError)) toast('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'); }
+}
+let USERS = null;
+async function loadUsers() {
+  try { const r = await api('api/users'); USERS = r.ok ? (await r.json()).users : []; } catch (e) { USERS = []; }
+  if (ui.view === 'users') render();
+}
+function viewUsers() {
+  const rows = (USERS || []).map(u => '<tr><td>' + esc(u.username) + '</td><td>' + esc(u.name) + '</td><td>' + ROLE_TH[u.role] + '</td><td>' + (u.active ? 'ใช้งานอยู่' : '<span class="late">ปิดใช้งาน</span>') +
+    '</td><td class="nowrap"><button class="btn btn-sm" data-action="edit-user" data-id="' + u.id + '">แก้ไข</button></td></tr>').join('');
+  return '<div class="row between"><div><h1>ผู้ใช้</h1><p class="muted" style="margin:4px 0 0">เซลล์บันทึก/แก้ไขข้อมูลได้ · หัวหน้าลบข้อมูล จัดการสินค้า และส่งออกไฟล์ได้เพิ่ม · ผู้ดูแลจัดการผู้ใช้และสำรองข้อมูลได้</p></div><button class="btn btn-primary" data-action="new-user">+ เพิ่มผู้ใช้</button></div>' +
+    (USERS ? '<section class="card" style="margin-top:14px"><div class="tbl-wrap"><table><thead><tr><th>ชื่อผู้ใช้</th><th>ชื่อที่แสดง</th><th>บทบาท</th><th>สถานะ</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div></section>' : '<p class="muted" style="margin-top:14px">กำลังโหลด…</p>') +
+    '<section class="card" style="margin-top:16px"><h2>สำรองข้อมูล</h2><p class="small muted" style="margin:0 0 10px">ระบบสำรองฐานข้อมูลอัตโนมัติทุกวันบนเซิร์ฟเวอร์ แนะนำให้ดาวน์โหลดไฟล์สำรองเก็บไว้ที่อื่นด้วยเป็นประจำ (เช่น สัปดาห์ละครั้ง) ไฟล์นี้มีข้อมูลลูกค้าและรหัสผ่านที่เข้ารหัสแล้ว เก็บให้ปลอดภัย</p>' +
+    '<a class="btn" href="api/backup" download style="text-decoration:none;display:inline-block">ดาวน์โหลดไฟล์สำรอง (.db)</a></section>';
+}
+function userModal(id) {
+  const u = id ? (USERS || []).find(x => x.id === id) : null;
+  openModal('<h2>' + (u ? 'แก้ไขผู้ใช้' : 'เพิ่มผู้ใช้') + '</h2><form data-form="user"><input type="hidden" name="id" value="' + (u ? u.id : '') + '"><div class="form-grid">' +
+    (u ? '<div class="field"><label>ชื่อผู้ใช้ (สำหรับล็อกอิน)</label><input type="text" value="' + esc(u.username) + '" disabled></div>' : fld('u-un', 'ชื่อผู้ใช้ (ภาษาอังกฤษ/ตัวเลข ใช้ล็อกอิน)', 'username', '', { req: true })) +
+    fld('u-name', 'ชื่อที่แสดง (ชื่อเซลล์)', 'name', u ? u.name : '', { req: true }) +
+    '<div class="field"><label for="u-role">บทบาท</label><select id="u-role" name="role">' + ['sales', 'manager', 'admin'].map(r => '<option value="' + r + '"' + (u && u.role === r ? ' selected' : '') + '>' + ROLE_TH[r] + '</option>').join('') + '</select></div>' +
+    (u ? '<div class="field"><label for="u-act">สถานะ</label><select id="u-act" name="active"><option value="1"' + (u.active ? ' selected' : '') + '>ใช้งานอยู่</option><option value="0"' + (u.active ? '' : ' selected') + '>ปิดใช้งาน</option></select></div>' : '') +
+    '<div class="field full"><label for="u-pw">' + (u ? 'ตั้งรหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน)' : 'รหัสผ่านเริ่มต้น (อย่างน้อย 8 ตัวอักษร)') + '</label><input type="password" id="u-pw" name="password" minlength="8" autocomplete="new-password"' + (u ? '' : ' required') + '></div>' +
+    '</div><div class="actions"><button type="button" class="btn" data-action="close-modal">ยกเลิก</button><button type="submit" class="btn btn-primary">บันทึก</button></div></form>');
+}
+async function saveUser(f) {
+  const id = +f.id || 0;
+  const body = id ? { name: (f.name || '').trim(), role: f.role, active: f.active === '1' } : { username: (f.username || '').trim(), name: (f.name || '').trim(), role: f.role, password: f.password };
+  if (id && f.password) body.password = f.password;
+  try {
+    const r = await api(id ? 'api/users/' + id : 'api/users', { body });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(j.error || 'บันทึกไม่สำเร็จ'); return; }
+    USERS = j.users; closeModal(); toast('บันทึกผู้ใช้แล้ว'); render();
+  } catch (e) { if (!(e instanceof AuthError)) toast('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'); }
+}
+
+/* ---------- เริ่มระบบ + ดึงข้อมูลที่คนอื่นบันทึก ---------- */
+let pollTimer = null, unloadBound = false;
+function startPolling() {
+  if (pollTimer) return;
+  pollTimer = setInterval(async () => {
+    if (!ME || dirty || pushing) return;
+    try {
+      const j = await (await api('api/version')).json();
+      if (j.version === ver && !needRefresh) { setStat('saved'); return; }
+      const a = document.activeElement;
+      if ((a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.closest && a.closest('#app')) || $('#modal-root').innerHTML) return;
+      adopt(await (await api('api/state')).json()); render(); setStat('saved');
+    } catch (e) { if (!(e instanceof AuthError)) setStat('offline'); }
+  }, 8000);
+}
+async function bootOnline() {
+  let r = null;
+  try { r = await api('api/state', { noRedirect: true }); } catch (e) { r = null; }
+  if (!r || r.status >= 500) {
+    getRoot().innerHTML = '<section class="card"><h2>เชื่อมต่อเซิร์ฟเวอร์ไม่ได้</h2><p class="muted">กำลังลองใหม่อัตโนมัติ… (ถ้าเซิร์ฟเวอร์เพิ่งเริ่มทำงาน อาจใช้เวลาครู่หนึ่ง)</p></section>';
+    setTimeout(bootOnline, 3000); return;
+  }
+  if (r.status === 401) { const j = await r.json().catch(() => ({})); showLogin('', !!j.setup); return; }
+  adopt(await r.json());
+  document.body.classList.remove('out');
+  const bar = $('.demo-bar > div');
+  if (bar) bar.innerHTML = '<span class="pill">ออนไลน์</span><span>เข้าสู่ระบบเป็น <span class="userchip">' + esc(ME.name) + '</span> · ' + ROLE_TH[ME.role] + '</span><span id="savestat" class="muted" role="status"></span>' +
+    '<button class="linkbtn" data-action="change-pw">เปลี่ยนรหัสผ่าน</button><button class="linkbtn" data-action="logout">ออกจากระบบ</button>';
+  render(); setStat('saved'); startPolling();
+  if (!unloadBound) { unloadBound = true; window.addEventListener('beforeunload', e => { if (dirty || pushing) { e.preventDefault(); e.returnValue = ''; } }); }
+}
+bootOnline();
+</script>
+</body>
+</html>

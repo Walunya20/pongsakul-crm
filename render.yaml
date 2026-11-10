@@ -1,0 +1,23 @@
+# Render Blueprint — สร้างเว็บ CRM + พื้นที่เก็บข้อมูลถาวร ในคลิกเดียว
+# หมายเหตุ: ราคา/ชื่อแผนของ Render เปลี่ยนได้ ตรวจที่ https://render.com/pricing ก่อนกดยืนยัน
+services:
+  - type: web
+    name: pongsakul-crm
+    runtime: python
+    plan: starter            # ต้องเป็นแผนเสียเงินจึงจะแนบดิสก์ถาวรได้ (แผนฟรีเก็บข้อมูลไม่อยู่)
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    healthCheckPath: /healthz
+    envVars:
+      - key: CRM_DATA_DIR
+        value: /var/data
+      - key: CRM_BEHIND_PROXY
+        value: "1"
+      - key: CRM_ADMIN_USER
+        value: admin
+      - key: CRM_ADMIN_PASSWORD
+        sync: false           # Render จะถามให้กรอกตอนสร้าง (อย่างน้อย 8 ตัวอักษร)
+    disk:
+      name: crm-data
+      mountPath: /var/data
+      sizeGB: 1

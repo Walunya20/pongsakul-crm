@@ -1,0 +1,7 @@
+data/
+data_test/
+venv/
+__pycache__/
+*.pyc
+*.db
+secret.key
